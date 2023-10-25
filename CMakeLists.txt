@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(PROJECT_NAME MentoringProgram)
+set(THIS MentoringProgram)
 
-project(${PROJECT_NAME} CXX)
+project(${THIS} CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(Sources main.cpp)
+set(SOURCES
+    main.cpp
+)
 
-add_executable(${PROJECT_NAME} ${Sources})
+add_executable(${THIS} ${SOURCES})
+
+target_include_directories(${THIS} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Sources)
+target_link_libraries(${THIS} Sources)
+
+add_subdirectory(Sources)
