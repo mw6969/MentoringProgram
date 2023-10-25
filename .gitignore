@@ -31,7 +31,7 @@ $RECYCLE.BIN/
 .fuse_hidden*
 
 # KDE directory preferences
-.directory
+ .directory
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
@@ -1043,3 +1043,6 @@ dkms.conf
 *.uf2
 # Raspberry Pi Pico disassembler file
 *.dis
+
+# .vscode folder
+.vscode
