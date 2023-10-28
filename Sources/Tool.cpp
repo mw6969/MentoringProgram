@@ -4,46 +4,82 @@
 
 #include "Tool.h"
 
+constexpr size_t BUFFER_SIZE = 100;
+
 std::condition_variable Tool::mConditionalVariable;
-std::string Tool::mData;
 std::mutex Tool::mMutex;
+bool Tool::mReaderDone;
+std::queue<char*> Tool::mQueue;
 
-void Tool::copy(const std::string_view sourceName, const std::string_view targetName)
+void Tool::copy(std::string_view inputFile, std::string_view outputFile)
 {
-    std::jthread readerThread(reader, sourceName);
-    std::jthread writerThread(writer, targetName);
+    std::jthread readerThread(reader, inputFile);
+    std::jthread writerThread(writer, outputFile);
 }
 
-void Tool::reader(const std::string_view sourceName)
+void Tool::reader(std::string_view inputFile)
 {
-    std::cout << "Reader has started\n";
+    std::ifstream inFile{inputFile.data()};
+    if (inFile.is_open())
+    {
+        std::cout << "Reader has started\n";
 
-    std::lock_guard<std::mutex> lockGuard{mMutex};
+        while (inFile)
+        {
+            std::lock_guard<std::mutex> lockGuard{mMutex};
 
-    std::ifstream inFile{sourceName.data()};
-    inFile >> mData;
-    inFile.close();
+            char* buffer{new char[BUFFER_SIZE]};
+            inFile.read(buffer, BUFFER_SIZE);
+            mQueue.push(buffer);
+            
+            mConditionalVariable.notify_one();
+        }
+        inFile.close();
 
-    mConditionalVariable.notify_one();
+        mReaderDone = true;
 
-    std::cout << "Reader has done\n";
+        std::cout << "Reader has done\n";
+    }
+    else
+    {
+        std::cout << "Error openning file\n";
+        abort();
+    }
 }
 
-void Tool::writer(const std::string_view targetName)
+void Tool::writer(std::string_view outputFile)
 {
-    std::cout << "Writer has started\n";
+    std::ofstream outFile{outputFile.data(), std::ios::app};
+    if (outFile.is_open())
+    {
+        std::cout << "Writer has started\n";
 
-    std::unique_lock<std::mutex> uniqueLock{mMutex};
+        while (true)
+        {
+            std::unique_lock<std::mutex> uniqueLock{mMutex};
+            mConditionalVariable.wait(uniqueLock, []() { return !mQueue.empty(); });
 
-    mConditionalVariable.wait(uniqueLock, []() { return !mData.empty(); });
+            char* buffer{mQueue.front()};
+            outFile.write(buffer, BUFFER_SIZE);
+            delete[] buffer;
 
-    std::ofstream outFile{targetName.data()};
-    outFile << mData;
-    outFile.close();
+            mQueue.pop();
 
-    mData.clear();
+            uniqueLock.unlock();
 
-    uniqueLock.unlock();
+            if (mReaderDone && mQueue.empty())
+            {
+                break;
+            }
+        }
 
-    std::cout << "Writer has done\n";
+        outFile.close();
+
+        std::cout << "Writer has done\n";
+    }
+    else
+    {
+        std::cout << "Error openning file\n";
+        abort();
+    }
 }

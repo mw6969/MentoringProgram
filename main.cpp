@@ -1,15 +1,20 @@
 #include <string>
+#include <iostream>
 
-#include "FileValidator.h"
 #include "Tool.h"
 
 int main(int argc, char *argv[])
 {
-    std::string sourceName, targetName;
-    FileValidator::validate(sourceName, "source");
-    FileValidator::validate(targetName, "target");
+    std::string inputFile;
+    std::cout << "Input file path:";
+    std::getline(std::cin, inputFile);
 
-    Tool::copy(sourceName, targetName);
+    std::string outputFile;
+    std::cout << "Output file path:";
+    std::getline(std::cin, outputFile);
+
+    Tool tool;
+    tool.copy(inputFile, outputFile);
 
     return 0;
 }

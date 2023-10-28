@@ -3,21 +3,23 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <string>
+#include <string_view>
+#include <queue>
 
 class Tool
 {
 public:
-    static void copy(const std::string_view sourceName, const std::string_view targetName);
+    static void copy(std::string_view inputFile, std::string_view outputFile);
 
 private:
     static std::condition_variable mConditionalVariable;
-    static std::string mData;
     static std::mutex mMutex;
+    static bool mReaderDone;
+    static std::queue<char*> mQueue;
 
 private:
-    static void reader(const std::string_view sourceName);
-    static void writer(const std::string_view targetName);
+    static void reader(std::string_view inputFile);
+    static void writer(std::string_view outputFile);
 };
 
 #endif
