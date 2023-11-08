@@ -5,6 +5,7 @@
 #include <mutex>
 #include <string_view>
 #include <queue>
+#include <utility>
 
 class Tool
 {
@@ -15,7 +16,7 @@ private:
     static std::condition_variable mConditionalVariable;
     static std::mutex mMutex;
     static bool mReaderDone;
-    static std::queue<char*> mQueue;
+    static std::queue<std::pair<char*, size_t>> mQueue;
 
 private:
     static void reader(std::string_view inputFile);
