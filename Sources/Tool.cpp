@@ -4,12 +4,10 @@
 
 #include "Tool.h"
 
-constexpr size_t BUFFER_SIZE = 100;
-
 std::condition_variable Tool::mConditionalVariable;
 std::mutex Tool::mMutex;
 bool Tool::mReaderDone;
-std::queue<char*> Tool::mQueue;
+std::queue<std::pair<char*, size_t>> Tool::mQueue;
 
 void Tool::copy(std::string_view inputFile, std::string_view outputFile)
 {
@@ -28,9 +26,10 @@ void Tool::reader(std::string_view inputFile)
         {
             std::lock_guard<std::mutex> lockGuard{mMutex};
 
-            char* buffer{new char[BUFFER_SIZE]};
-            inFile.read(buffer, BUFFER_SIZE);
-            mQueue.push(buffer);
+            size_t bufferSize{100};
+            char* buffer{new char[bufferSize]};
+            inFile.read(buffer, bufferSize);
+            mQueue.push(std::make_pair(buffer, inFile.gcount()));
             
             mConditionalVariable.notify_one();
         }
@@ -59,13 +58,14 @@ void Tool::writer(std::string_view outputFile)
             std::unique_lock<std::mutex> uniqueLock{mMutex};
             mConditionalVariable.wait(uniqueLock, []() { return !mQueue.empty(); });
 
-            char* buffer{mQueue.front()};
-            outFile.write(buffer, BUFFER_SIZE);
-            delete[] buffer;
-
+            char* buffer{mQueue.front().first};
+            size_t bufferSize{mQueue.front().second};
             mQueue.pop();
 
             uniqueLock.unlock();
+
+            outFile.write(buffer, bufferSize);
+            delete[] buffer;
 
             if (mReaderDone && mQueue.empty())
             {
