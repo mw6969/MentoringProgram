@@ -17,7 +17,7 @@ void Tool::copy(std::string_view inputFile, std::string_view outputFile)
 
 void Tool::reader(std::string_view inputFile)
 {
-    std::ifstream inFile{inputFile.data()};
+    std::ifstream inFile{inputFile.data(), std::ios_base::in | std::ios_base::binary};
     if (inFile.is_open())
     {
         std::cout << "Reader has started\n";
@@ -48,7 +48,7 @@ void Tool::reader(std::string_view inputFile)
 
 void Tool::writer(std::string_view outputFile)
 {
-    std::ofstream outFile{outputFile.data(), std::ios::app};
+    std::ofstream outFile{outputFile.data(), std::ios::app | std::ios_base::binary};
     if (outFile.is_open())
     {
         std::cout << "Writer has started\n";
