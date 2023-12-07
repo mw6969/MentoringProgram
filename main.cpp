@@ -5,16 +5,14 @@
 
 int main(int argc, char *argv[])
 {
-    std::string inputFile;
-    std::cout << "Input file path:";
-    std::getline(std::cin, inputFile);
-
-    std::string outputFile;
-    std::cout << "Output file path:";
-    std::getline(std::cin, outputFile);
+    if (argc != 3)
+    {
+        std::cerr << "Invalid arguments" << std::endl;
+        return -1;
+    }
 
     Tool tool;
-    tool.copy(inputFile, outputFile);
+    tool.copy(argv[1], argv[2]);
 
     return 0;
 }
