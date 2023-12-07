@@ -4,15 +4,10 @@
 
 #include "Tool.h"
 
-std::condition_variable Tool::mConditionalVariable;
-std::mutex Tool::mMutex;
-bool Tool::mReaderDone;
-std::queue<std::pair<char*, size_t>> Tool::mQueue;
-
 void Tool::copy(std::string_view inputFile, std::string_view outputFile)
 {
-    std::jthread readerThread(reader, inputFile);
-    std::jthread writerThread(writer, outputFile);
+    std::jthread readerThread(&Tool::reader, this, inputFile);
+    std::jthread writerThread(&Tool::writer, this, outputFile);
 }
 
 void Tool::reader(std::string_view inputFile)
@@ -56,7 +51,7 @@ void Tool::writer(std::string_view outputFile)
         while (true)
         {
             std::unique_lock<std::mutex> uniqueLock{mMutex};
-            mConditionalVariable.wait(uniqueLock, []() { return !mQueue.empty(); });
+            mConditionalVariable.wait(uniqueLock, [this]() { return !mQueue.empty(); });
 
             char* buffer{mQueue.front().first};
             size_t bufferSize{mQueue.front().second};

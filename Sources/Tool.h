@@ -10,17 +10,17 @@
 class Tool
 {
 public:
-    static void copy(std::string_view inputFile, std::string_view outputFile);
+    void copy(std::string_view inputFile, std::string_view outputFile);
 
 private:
-    static std::condition_variable mConditionalVariable;
-    static std::mutex mMutex;
-    static bool mReaderDone;
-    static std::queue<std::pair<char*, size_t>> mQueue;
+    std::condition_variable mConditionalVariable;
+    std::mutex mMutex;
+    bool mReaderDone;
+    std::queue<std::pair<char*, size_t>> mQueue;
 
 private:
-    static void reader(std::string_view inputFile);
-    static void writer(std::string_view outputFile);
+    void reader(std::string_view inputFile);
+    void writer(std::string_view outputFile);
 };
 
 #endif
