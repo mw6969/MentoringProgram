@@ -19,24 +19,24 @@ void Tool::reader(std::string_view inputFile)
 
         while (inFile)
         {
-            std::lock_guard<std::mutex> lockGuard{mMutex};
+            std::lock_guard<std::mutex> lockGuard{mutex_};
 
             std::string buffer;
             buffer.resize(100);
             inFile.read(buffer.data(), buffer.size());
-            mQueue.push(std::make_pair(buffer, inFile.gcount()));
+            queue_.push(std::make_pair(buffer, inFile.gcount()));
 
-            mConditionalVariable.notify_one();
+            conditionalVariable_.notify_one();
         }
         inFile.close();
 
-        mReaderDone = true;
+        readerDone_ = true;
 
         std::cout << "Reader has done\n";
     }
     else
     {
-        std::cout << "Error openning file\n";
+        std::cout << "Error opening file\n";
         abort();
     }
 }
@@ -50,18 +50,18 @@ void Tool::writer(std::string_view outputFile)
 
         while (true)
         {
-            std::unique_lock<std::mutex> uniqueLock{mMutex};
-            mConditionalVariable.wait(uniqueLock, [this]() { return !mQueue.empty(); });
+            std::unique_lock<std::mutex> uniqueLock{mutex_};
+            conditionalVariable_.wait(uniqueLock, [this]() { return !queue_.empty(); });
 
-            std::string buffer{mQueue.front().first};
-            size_t bufferSize{mQueue.front().second};
-            mQueue.pop();
+            std::string buffer{queue_.front().first};
+            size_t bufferSize{queue_.front().second};
+            queue_.pop();
 
             uniqueLock.unlock();
 
             outFile.write(buffer.data(), bufferSize);
 
-            if (mReaderDone && mQueue.empty())
+            if (readerDone_ && queue_.empty())
             {
                 break;
             }
@@ -73,7 +73,7 @@ void Tool::writer(std::string_view outputFile)
     }
     else
     {
-        std::cout << "Error openning file\n";
+        std::cout << "Error opening file\n";
         abort();
     }
 }

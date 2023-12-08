@@ -13,10 +13,10 @@ public:
     void copy(std::string_view inputFile, std::string_view outputFile);
 
 private:
-    std::condition_variable mConditionalVariable;
-    std::mutex mMutex;
-    bool mReaderDone;
-    std::queue<std::pair<std::string, size_t>> mQueue;
+    std::condition_variable conditionalVariable_;
+    std::mutex mutex_;
+    bool readerDone_;
+    std::queue<std::pair<std::string, size_t>> queue_;
 
 private:
     void reader(std::string_view inputFile);
