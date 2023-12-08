@@ -21,11 +21,11 @@ void Tool::reader(std::string_view inputFile)
         {
             std::lock_guard<std::mutex> lockGuard{mMutex};
 
-            size_t bufferSize{100};
-            char* buffer{new char[bufferSize]};
-            inFile.read(buffer, bufferSize);
+            std::string buffer;
+            buffer.resize(100);
+            inFile.read(buffer.data(), buffer.size());
             mQueue.push(std::make_pair(buffer, inFile.gcount()));
-            
+
             mConditionalVariable.notify_one();
         }
         inFile.close();
@@ -53,14 +53,13 @@ void Tool::writer(std::string_view outputFile)
             std::unique_lock<std::mutex> uniqueLock{mMutex};
             mConditionalVariable.wait(uniqueLock, [this]() { return !mQueue.empty(); });
 
-            char* buffer{mQueue.front().first};
+            std::string buffer{mQueue.front().first};
             size_t bufferSize{mQueue.front().second};
             mQueue.pop();
 
             uniqueLock.unlock();
 
-            outFile.write(buffer, bufferSize);
-            delete[] buffer;
+            outFile.write(buffer.data(), bufferSize);
 
             if (mReaderDone && mQueue.empty())
             {

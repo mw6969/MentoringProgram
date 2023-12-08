@@ -3,7 +3,7 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <string_view>
+#include <string>
 #include <queue>
 #include <utility>
 
@@ -16,7 +16,7 @@ private:
     std::condition_variable mConditionalVariable;
     std::mutex mMutex;
     bool mReaderDone;
-    std::queue<std::pair<char*, size_t>> mQueue;
+    std::queue<std::pair<std::string, size_t>> mQueue;
 
 private:
     void reader(std::string_view inputFile);
