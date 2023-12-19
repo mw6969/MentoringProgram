@@ -4,70 +4,67 @@
 
 #include "Tool.h"
 
-std::condition_variable Tool::mConditionalVariable;
-std::mutex Tool::mMutex;
-bool Tool::mReaderDone;
-std::queue<std::pair<char*, size_t>> Tool::mQueue;
-
-void Tool::copy(std::string_view inputFile, std::string_view outputFile)
+void Tool::runReader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
-    std::jthread readerThread(reader, inputFile);
-    std::jthread writerThread(writer, outputFile);
+    std::jthread readerThread(&Tool::reader, this, inputFile, sharedMemory);
 }
 
-void Tool::reader(std::string_view inputFile)
+void Tool::runWriter(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
-    std::ifstream inFile{inputFile.data()};
+    std::jthread writerThread(&Tool::writer, this, outputFile, sharedMemory);
+}
+
+void Tool::reader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory)
+{
+    std::ifstream inFile{inputFile.data(), std::ios_base::in | std::ios_base::binary};
     if (inFile.is_open())
     {
         std::cout << "Reader has started\n";
 
         while (inFile)
         {
-            std::lock_guard<std::mutex> lockGuard{mMutex};
+            std::lock_guard<std::mutex> lockGuard{mutex_};
 
-            size_t bufferSize{100};
-            char* buffer{new char[bufferSize]};
-            inFile.read(buffer, bufferSize);
-            mQueue.push(std::make_pair(buffer, inFile.gcount()));
-            
-            mConditionalVariable.notify_one();
+            auto buffer = sharedMemory.get();
+            //inFile.read(sharedMemory.get(), 100);
+            //queue_.push(std::make_pair(buffer, inFile.gcount()));
+
+            conditionalVariable_.notify_one();
         }
         inFile.close();
 
-        mReaderDone = true;
+        readerDone_ = true;
 
         std::cout << "Reader has done\n";
     }
     else
     {
-        std::cout << "Error openning file\n";
+        std::cout << "Error opening file\n";
         abort();
     }
 }
 
-void Tool::writer(std::string_view outputFile)
+void Tool::writer(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
-    std::ofstream outFile{outputFile.data(), std::ios::app};
+    std::ofstream outFile{outputFile.data(), std::ios::app | std::ios_base::binary};
     if (outFile.is_open())
     {
         std::cout << "Writer has started\n";
 
         while (true)
         {
-            std::unique_lock<std::mutex> uniqueLock{mMutex};
-            mConditionalVariable.wait(uniqueLock, []() { return !mQueue.empty(); });
+            std::unique_lock<std::mutex> uniqueLock{mutex_};
+            conditionalVariable_.wait(uniqueLock, [this]() { return !queue_.empty(); });
 
-            char* buffer{mQueue.front().first};
-            size_t bufferSize{mQueue.front().second};
-            mQueue.pop();
+            std::string buffer{queue_.front().first};
+            size_t bufferSize{queue_.front().second};
+            queue_.pop();
 
             uniqueLock.unlock();
 
-            outFile.write(buffer, bufferSize);
-            delete[] buffer;
+            outFile.write(buffer.data(), bufferSize);
 
-            if (mReaderDone && mQueue.empty())
+            if (readerDone_ && queue_.empty())
             {
                 break;
             }
@@ -79,7 +76,7 @@ void Tool::writer(std::string_view outputFile)
     }
     else
     {
-        std::cout << "Error openning file\n";
+        std::cout << "Error opening file\n";
         abort();
     }
 }

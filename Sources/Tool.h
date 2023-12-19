@@ -2,25 +2,29 @@
 #define _TOOL_
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
-#include <string_view>
+#include <string>
 #include <queue>
 #include <utility>
+
+#include "SharedMemory.h"
 
 class Tool
 {
 public:
-    static void copy(std::string_view inputFile, std::string_view outputFile);
+    void runReader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory);
+    void runWriter(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory);
 
 private:
-    static std::condition_variable mConditionalVariable;
-    static std::mutex mMutex;
-    static bool mReaderDone;
-    static std::queue<std::pair<char*, size_t>> mQueue;
+    std::condition_variable conditionalVariable_;
+    std::mutex mutex_;
+    bool readerDone_;
+    std::queue<std::pair<std::string, size_t>> queue_;
 
 private:
-    static void reader(std::string_view inputFile);
-    static void writer(std::string_view outputFile);
+    void reader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory);
+    void writer(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory);
 };
 
 #endif
