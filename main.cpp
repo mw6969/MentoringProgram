@@ -1,5 +1,8 @@
 #include <iostream>
+#include <string.h>
+#include <unistd.h>
 
+#include "SharedMemory.h"
 #include "Tool.h"
 
 int main(int argc, char *argv[])
@@ -10,8 +13,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    SharedMemory sharedMemory;
+    auto memory{sharedMemory.create()};
+
     Tool tool;
-    tool.copy(argv[1], argv[2]);
+    tool.runReader(argv[1], memory);
+    tool.runWriter(argv[2], memory);
 
     return 0;
 }

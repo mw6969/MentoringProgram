@@ -4,13 +4,17 @@
 
 #include "Tool.h"
 
-void Tool::copy(std::string_view inputFile, std::string_view outputFile)
+void Tool::runReader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
-    std::jthread readerThread(&Tool::reader, this, inputFile);
-    std::jthread writerThread(&Tool::writer, this, outputFile);
+    std::jthread readerThread(&Tool::reader, this, inputFile, sharedMemory);
 }
 
-void Tool::reader(std::string_view inputFile)
+void Tool::runWriter(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory)
+{
+    std::jthread writerThread(&Tool::writer, this, outputFile, sharedMemory);
+}
+
+void Tool::reader(std::string_view inputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
     std::ifstream inFile{inputFile.data(), std::ios_base::in | std::ios_base::binary};
     if (inFile.is_open())
@@ -21,10 +25,9 @@ void Tool::reader(std::string_view inputFile)
         {
             std::lock_guard<std::mutex> lockGuard{mutex_};
 
-            std::string buffer;
-            buffer.resize(100);
-            inFile.read(buffer.data(), buffer.size());
-            queue_.push(std::make_pair(buffer, inFile.gcount()));
+            auto buffer = sharedMemory.get();
+            //inFile.read(sharedMemory.get(), 100);
+            //queue_.push(std::make_pair(buffer, inFile.gcount()));
 
             conditionalVariable_.notify_one();
         }
@@ -41,7 +44,7 @@ void Tool::reader(std::string_view inputFile)
     }
 }
 
-void Tool::writer(std::string_view outputFile)
+void Tool::writer(std::string_view outputFile, std::shared_ptr<SharedMemory> sharedMemory)
 {
     std::ofstream outFile{outputFile.data(), std::ios::app | std::ios_base::binary};
     if (outFile.is_open())
