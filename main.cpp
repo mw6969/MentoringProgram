@@ -15,10 +15,17 @@ int main(int argc, char *argv[])
 
     SharedMemory sharedMemory;
     auto memory{sharedMemory.create()};
-
+    
     Tool tool;
-    tool.runReader(argv[1], memory);
-    tool.runWriter(argv[2], memory);
+
+    if (pid_t pid{fork()}; pid == 0)
+    {
+        tool.runReader(argv[1], memory);
+    }
+    else
+    {
+        tool.runWriter(argv[2], memory);
+    }
 
     return 0;
 }
