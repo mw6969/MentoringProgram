@@ -18,7 +18,7 @@ SharedMemory::SharedMemory(const std::string& name)
     }
 
     // Set the size of the shared memory object
-    if (ftruncate(id_, sizeof(pthread_mutex_t)) == -1) {
+    if (ftruncate(id_, sizeof(std::queue<std::pair<std::string, size_t>>)) == -1) {
         std::cerr << "ftruncate failed with " << name << "\n";
     }
 

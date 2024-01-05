@@ -22,7 +22,7 @@ void Tool::reader(const std::string& fileName, const std::string& memoryName)
 
             std::string buffer;
             inFile.read(buffer.data(), 100);
-            queue->push(std::make_pair(buffer, 100));
+            queue->emplace(std::make_pair(buffer, 100));
 
             pthread_cond_signal(conditionVariable.get());
             pthread_mutex_unlock(mutex.get());
