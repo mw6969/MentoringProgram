@@ -1,85 +1,41 @@
 #include <iostream>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "SharedMemory.h"
 
-SharedMemory::SharedMemory(const std::string &name)
+SharedMemory::SharedMemory(const std::string& name)
 {
+    // Store shared memory name
     name_ = std::make_unique<std::string>(name);
-    conditionVariable_ = std::make_shared<pthread_cond_t>();
-    mutex_ = std::make_shared<pthread_mutex_t>();
+
+    // Create and open a new object, or open an existing object
+    int id_{shm_open(name.data(), O_CREAT | O_RDWR | O_TRUNC, S_IRWXU | S_IRWXG)};
+    if (id_ < 0) {
+        std::cerr << "shm_open failed with " << name << "\n";
+    }
+
+    // Set the size of the shared memory object
+    if (ftruncate(id_, sizeof(pthread_mutex_t)) == -1) {
+        std::cerr << "ftruncate failed with " << name << "\n";
+    }
+
+    // Map the shared memory object into the virtual address space of the calling process
+    queue_ = (std::queue<std::pair<std::string, size_t>>*) mmap(NULL, sizeof(std::queue<std::pair<std::string, size_t>>), PROT_READ | PROT_WRITE, MAP_SHARED, id_, 0);
+    if (queue_ == MAP_FAILED) {
+        std::cerr << "mmap failed with " << name << "\n";
+    }
 }
 
 SharedMemory::~SharedMemory()
 {
-    // Destroy mutex with condition
-    pthread_mutex_destroy(mutex_.get());
-    pthread_cond_destroy(conditionVariable_.get());
-
-    // Remove a shared memory object name
+    // Release the shared memory object
     shm_unlink(name_->data());
 }
 
-void SharedMemory::push(const std::string &data, const size_t size)
+std::queue<std::pair<std::string, size_t>>* SharedMemory::get()
 {
-    open();
-    fileTruncate();
-    memoryMap(data, size);
-}
-
-std::shared_ptr<pthread_cond_t> SharedMemory::getConditionVariable() const
-{
-    return conditionVariable_;
-}
-
-std::shared_ptr<pthread_mutex_t> SharedMemory::getMutex() const
-{
-    return mutex_;
-}
-
-bool SharedMemory::empty()
-{
-    return queue_.empty();
-}
-
-std::string SharedMemory::itemBuf()
-{
-    return queue_.front().first;
-}
-
-std::size_t SharedMemory::itemSize()
-{
-    return queue_.front().second;
-}
-
-void SharedMemory::pop()
-{
-    queue_.pop();
-}
-
-void SharedMemory::open()
-{
-    // Create and open a new object, or open an existing object
-    fileDescriptor_ = shm_open(name_->data(), O_CREAT | O_EXCL | O_RDWR, 0600);
-    if (fileDescriptor_ == -1) {
-        std::cerr << "An error occurred in the shared memory object creation stage\n";
-    }
-}
-
-void SharedMemory::fileTruncate()
-{
-    // Set the size of the shared memory object
-    if (ftruncate(fileDescriptor_, sizeof(*this)) == -1) {
-        std::cerr << "An error occurred in the setting size of the shared memory object\n";
-    }
-}
-
-void SharedMemory::memoryMap(const std::string &data, const size_t size)
-{
-    // Map the shared memory object into the virtual address space of the calling process
-    SharedMemory* shmp{(SharedMemory*)(mmap(NULL, sizeof(*shmp), PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor_, 0))};
-    if (shmp == MAP_FAILED) {
-        std::cerr << "An error occurred when mapping the shared memory object into the virtual address space of the calling process\n";
-    }
-
-    queue_.push(std::make_pair(data, size));
+    return queue_;
 }
