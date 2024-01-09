@@ -1,20 +1,32 @@
 #ifndef _SHAREDMEMORY_
 #define _SHAREDMEMORY_
 
-#include <memory>
-#include <string>
-#include <queue>
+#include <stddef.h>
+
+struct String {
+    size_t identifier;
+    char* data;
+};
+
+struct Collection {
+    size_t size;
+    String* strings;
+};
 class SharedMemory
 {
 public:
-    SharedMemory(const std::string& name);
-    ~SharedMemory();
+    SharedMemory();
+    ~SharedMemory() = default;
 
-    std::queue<std::pair<std::string, size_t>>* get();
+    void push(char* data);
+    void pop();
+    String front();
+    void destroy();
+    bool empty();
+    void print();
 
 private:
-    std::queue<std::pair<std::string, size_t>>* queue_;
-    std::unique_ptr<std::string> name_;
+    Collection* collection_;
     int id_;
 };
 

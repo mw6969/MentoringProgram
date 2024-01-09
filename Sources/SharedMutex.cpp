@@ -6,26 +6,22 @@
 
 #include "SharedMutex.h"
 
-#define MYMUTEX "/mymutex"
+#define MYMUTEX "mymutex"
 
-SharedMutex::SharedMutex()
-{
+SharedMutex::SharedMutex() {
     // Create and open a new object, or open an existing object
     int id_{shm_open(MYMUTEX, O_CREAT | O_RDWR | O_TRUNC, S_IRWXU | S_IRWXG)};
-    if (id_ < 0) {
+    if (id_ < 0)
         std::cerr << "shm_open failed with " << MYMUTEX << "\n";
-    }
 
     // Set the size of the shared memory object
-    if (ftruncate(id_, sizeof(pthread_mutex_t)) == -1) {
+    if (ftruncate(id_, sizeof(pthread_mutex_t)) == -1)
         std::cerr << "ftruncate failed with " << MYMUTEX << "\n";
-    }
 
     // Map the shared memory object into the virtual address space of the calling process
     mutex_ = (pthread_mutex_t *) mmap(NULL, sizeof(pthread_mutex_t), PROT_READ | PROT_WRITE, MAP_SHARED, id_, 0);
-    if (mutex_ == MAP_FAILED) {
+    if (mutex_ == MAP_FAILED)
         std::cerr << "mmap failed with " << MYMUTEX << "\n";
-    }
 
     // Set mutex shared between processes
     pthread_mutexattr_t mattr;
@@ -35,8 +31,7 @@ SharedMutex::SharedMutex()
     pthread_mutexattr_destroy(&mattr);
 }
 
-SharedMutex::~SharedMutex()
-{
+SharedMutex::~SharedMutex() {
     // Destroy mutex
     pthread_mutex_destroy(mutex_);
 
@@ -44,7 +39,6 @@ SharedMutex::~SharedMutex()
     shm_unlink(MYMUTEX);
 }
 
-pthread_mutex_t* SharedMutex::get()
-{
+pthread_mutex_t* SharedMutex::get() {
     return mutex_;
 }

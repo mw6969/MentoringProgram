@@ -1,41 +1,77 @@
+#include <cstring>
 #include <iostream>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include <sys/shm.h>
 
 #include "SharedMemory.h"
 
-SharedMemory::SharedMemory(const std::string& name)
-{
-    // Store shared memory name
-    name_ = std::make_unique<std::string>(name);
+SharedMemory::SharedMemory() {
+    // Get shared memory segment of 'Collection' class
+    id_ = shmget(696969, sizeof(Collection), IPC_CREAT | 0666);
+    if (id_ < 0)
+        std::cerr << "Error getting shared memory segment of 'Collection' class\n";
+    else
+        collection_->size = 0;
 
-    // Create and open a new object, or open an existing object
-    int id_{shm_open(name.data(), O_CREAT | O_RDWR | O_TRUNC, S_IRWXU | S_IRWXG)};
-    if (id_ < 0) {
-        std::cerr << "shm_open failed with " << name << "\n";
-    }
+    // Attach shared memory segment of 'Collection' class
+    collection_ = (Collection*)shmat(id_, (void*)0, 0);
+    if (collection_ == (Collection*)(-1))
+        std::cerr << "Error attaching shared memory segment of 'Collection' class\n";
+    
+    // Get shared memory segment of 'String' class
+    id_ = shmget(969696, (sizeof(String)), IPC_CREAT | 0666);
+    if (id_ < 0)
+        std::cerr << "Error getting shared memory segment of 'String' class\n";
 
-    // Set the size of the shared memory object
-    if (ftruncate(id_, sizeof(std::queue<std::pair<std::string, size_t>>)) == -1) {
-        std::cerr << "ftruncate failed with " << name << "\n";
-    }
+    // Attach shared memory segment of 'String' class
+    collection_->strings = (String*)shmat(id_, (void*)0, 0);
+    if (collection_->strings == (String*)(-1))
+        std::cerr << "Error attaching shared memory segment of 'String' class\n";
+}
 
-    // Map the shared memory object into the virtual address space of the calling process
-    queue_ = (std::queue<std::pair<std::string, size_t>>*) mmap(NULL, sizeof(std::queue<std::pair<std::string, size_t>>), PROT_READ | PROT_WRITE, MAP_SHARED, id_, 0);
-    if (queue_ == MAP_FAILED) {
-        std::cerr << "mmap failed with " << name << "\n";
+void SharedMemory::push(char* data) {
+    // Get shared memory segment of 'data' member
+    id_ = shmget(collection_->size, (strlen(data) * sizeof(char)), IPC_CREAT | 0666);
+    if (id_ < 0)
+        std::cerr << "Error getting shared memory segment of 'data' member\n";
+
+    // Attach shared memory segment of 'data' member
+    collection_->strings[collection_->size].data = (char*)shmat(id_, (void*)0, 0);
+    if (collection_->strings[collection_->size].data == (char*)(-1))
+        std::cerr << "Error attaching shared memory segment of 'data' member\n";
+
+    collection_->strings[collection_->size].identifier = collection_->size;
+    collection_->strings[collection_->size].data = data;
+    collection_->size++;
+
+}
+
+void SharedMemory::pop() {
+    if (collection_->size >= 0) {
+        // Detach last shared memory segment of 'data' member
+        shmdt(collection_->strings[collection_->size].data);
+        collection_->size--;
     }
 }
 
-SharedMemory::~SharedMemory()
-{
-    // Release the shared memory object
-    shm_unlink(name_->data());
+String SharedMemory::front() {
+    return collection_->strings[collection_->size];
 }
 
-std::queue<std::pair<std::string, size_t>>* SharedMemory::get()
-{
-    return queue_;
+void SharedMemory::destroy() {
+    // Detach last shared memory segment of 'Collection' class
+    shmdt(collection_);
+
+    // Remove identifier
+    shmctl(id_, IPC_RMID, 0);
+}
+
+bool SharedMemory::empty() {
+    return collection_->size == 0;
+}
+
+void SharedMemory::print() {
+    std::cout << collection_->size << "\n";
+    for (int i = 0; i < collection_->size; i++) {
+        std::cout << collection_->strings[i].data << "\n";
+    }
 }

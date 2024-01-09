@@ -6,8 +6,11 @@
 class Tool
 {
 public:
-    void reader(const std::string& fileName, const std::string& memoryName);
-    void writer(const std::string& fileName, const std::string& memoryName);
+    Tool() = default;
+    ~Tool() = default;
+
+    void reader(const std::string& fileName);
+    void writer(const std::string& fileName);
 
 private:
     bool readerDone_;

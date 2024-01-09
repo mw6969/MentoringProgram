@@ -6,15 +6,13 @@
 #include "SharedMutex.h"
 #include "Tool.h"
 
-void Tool::reader(const std::string& fileName, const std::string& memoryName)
-{
+void Tool::reader(const std::string& fileName) {
     std::ifstream inFile{fileName.data(), std::ios_base::in | std::ios_base::binary};
     if (inFile.is_open()) {
         std::cout << "Reader has started\n";
 
         while (inFile) {
-            SharedMemory sharedMemory(memoryName.data());
-            auto queue{sharedMemory.get()};
+            SharedMemory sharedMemory;
             SharedMutex mutex;
             SharedConditionVariable conditionVariable;
 
@@ -22,7 +20,8 @@ void Tool::reader(const std::string& fileName, const std::string& memoryName)
 
             std::string buffer;
             inFile.read(buffer.data(), 100);
-            queue->emplace(std::make_pair(buffer, 100));
+            sharedMemory.push(buffer.data());
+            sharedMemory.print();
 
             pthread_cond_signal(conditionVariable.get());
             pthread_mutex_unlock(mutex.get());
@@ -32,36 +31,33 @@ void Tool::reader(const std::string& fileName, const std::string& memoryName)
         readerDone_ = true;
 
         std::cout << "Reader has done\n";
-        exit(0);
     } else {
         std::cout << "Error opening input file\n";
     }
 }
 
-void Tool::writer(const std::string& fileName, const std::string& memoryName)
-{
+void Tool::writer(const std::string& fileName) {
     std::ofstream outFile{fileName.data(), std::ios::app | std::ios_base::binary};
     if (outFile.is_open()) {
         std::cout << "Writer has started\n";
 
         while (true) {
-            SharedMemory sharedMemory(memoryName.data());
-            auto queue{sharedMemory.get()};
+            SharedMemory sharedMemory;
             SharedMutex mutex;
             SharedConditionVariable conditionVariable;
 
             pthread_mutex_lock(mutex.get());
             pthread_cond_wait(conditionVariable.get(), mutex.get());
 
-            std::string buffer{queue->front().first};
-            size_t size{queue->front().second};
-            queue->pop();
+            std::string buffer{sharedMemory.front().data};
+            sharedMemory.pop();
 
             pthread_mutex_unlock(mutex.get());
 
-            outFile.write(buffer.data(), size);
+            outFile.write(buffer.data(), 100);
 
-            if (readerDone_ && queue->empty()) {
+            if (readerDone_ && sharedMemory.empty()) {
+                sharedMemory.destroy();
                 break;
             }
         }
@@ -69,7 +65,6 @@ void Tool::writer(const std::string& fileName, const std::string& memoryName)
         outFile.close();
 
         std::cout << "Writer has done\n";
-        exit(0);
     } else {
         std::cout << "Error opening output file\n";
     }
