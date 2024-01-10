@@ -18,7 +18,7 @@ SharedConditionVariable::SharedConditionVariable() {
     if (ftruncate(id_, sizeof(pthread_cond_t)) == -1)
         std::cerr << "ftruncate failed with " << MYCOND << "\n";
 
-    // Map the shared memory object into the virtual address space of the calling process
+    // Map the shared memory object
     conditionVariable_ = (pthread_cond_t *) mmap(NULL, sizeof(pthread_cond_t), PROT_READ | PROT_WRITE, MAP_SHARED, id_, 0);
     if (conditionVariable_ == MAP_FAILED)
         std::cerr << "mmap failed with " << MYCOND << "\n";
@@ -38,6 +38,9 @@ SharedConditionVariable::~SharedConditionVariable() {
 
     // Release the shared memory object
     shm_unlink(MYCOND);
+
+    // Unmap the shared memory object
+    munmap(conditionVariable_, sizeof(pthread_cond_t));
 }
 
 pthread_cond_t* SharedConditionVariable::get() {

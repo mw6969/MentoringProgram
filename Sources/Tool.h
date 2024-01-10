@@ -3,6 +3,10 @@
 
 #include <string>
 
+#include "SharedMemory.h"
+#include "SharedConditionVariable.h"
+#include "SharedMutex.h"
+
 class Tool
 {
 public:
@@ -13,6 +17,9 @@ public:
     void writer(const std::string& fileName);
 
 private:
+    SharedMemory sharedMemory_;
+    SharedMutex mutex_;
+    SharedConditionVariable conditionVariable_;
     bool readerDone_;
 };
 

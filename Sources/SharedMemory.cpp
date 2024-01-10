@@ -28,9 +28,9 @@ SharedMemory::SharedMemory() {
     collection_->size = 0;
 }
 
-void SharedMemory::push(const std::string& data) {
+void SharedMemory::push(char* data) {
     // Get shared memory segment of 'data' member
-    id_ = shmget(88, (200 * sizeof(char)), IPC_CREAT | 0666);
+    id_ = shmget(6000 + collection_->size, (strlen(data) * sizeof(char)), IPC_CREAT | 0666);
     if (id_ < 0)
         std::cerr << "Error getting shared memory segment of 'data' member\n";
 
@@ -40,20 +40,20 @@ void SharedMemory::push(const std::string& data) {
         std::cerr << "Error attaching shared memory segment of 'data' member\n";
 
     collection_->strings[collection_->size].identifier = collection_->size;
-    strcpy(collection_->strings[collection_->size].data, data.c_str());
+    strcpy(collection_->strings[collection_->size].data, data);
     collection_->size++;
 }
 
 void SharedMemory::pop() {
     if (collection_->size >= 0) {
         // Detach last shared memory segment of 'data' member
-        shmdt(collection_->strings[collection_->size].data);
+        shmdt(collection_->strings[collection_->size - 1].data);
         collection_->size--;
     }
 }
 
-String SharedMemory::front() {
-    return collection_->strings[collection_->size];
+char* SharedMemory::front() {
+    return collection_->strings[collection_->size - 1].data;
 }
 
 void SharedMemory::destroy() {

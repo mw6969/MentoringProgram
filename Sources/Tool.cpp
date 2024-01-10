@@ -1,9 +1,8 @@
+
+#include <cstring>
 #include <fstream>
 #include <iostream>
  
-#include "SharedMemory.h"
-#include "SharedConditionVariable.h"
-#include "SharedMutex.h"
 #include "Tool.h"
 
 void Tool::reader(const std::string& fileName) {
@@ -11,20 +10,16 @@ void Tool::reader(const std::string& fileName) {
     if (inFile.is_open()) {
         std::cout << "Reader has started\n";
 
-        SharedMemory sharedMemory;
-        SharedMutex mutex;
-        SharedConditionVariable conditionVariable;
-
         while (inFile) {
-            pthread_mutex_lock(mutex.get());
+            pthread_mutex_lock(mutex_.get());
 
             size_t bufferSize{100};
             char* buffer{new char[bufferSize]};
             inFile.read(buffer, bufferSize);
-            sharedMemory.push(buffer);
+            sharedMemory_.push(buffer);
 
-            pthread_cond_signal(conditionVariable.get());
-            pthread_mutex_unlock(mutex.get());
+            pthread_mutex_unlock(mutex_.get());
+            pthread_cond_signal(conditionVariable_.get());
         }
         inFile.close();
 
@@ -41,26 +36,21 @@ void Tool::writer(const std::string& fileName) {
     if (outFile.is_open()) {
         std::cout << "Writer has started\n";
 
-        SharedMemory sharedMemory;
-        SharedMutex mutex;
-        SharedConditionVariable conditionVariable;
-
         while (true) {
-            pthread_mutex_lock(mutex.get());
+            pthread_mutex_lock(mutex_.get());
+            if (sharedMemory_.empty())
+                pthread_cond_wait(conditionVariable_.get(), mutex_.get());
 
-            if (sharedMemory.empty()) {
-                pthread_cond_wait(conditionVariable.get(), mutex.get());
-            }
+            char* data{sharedMemory_.front()};
+            char* buffer{new char[strlen(data)]};
+            strcpy(buffer, data);
+            sharedMemory_.pop();
 
-            std::string buffer{sharedMemory.front().data};
-            sharedMemory.pop();
+            pthread_mutex_unlock(mutex_.get());
+            outFile.write(buffer, strlen(buffer));
 
-            pthread_mutex_unlock(mutex.get());
-
-            outFile.write(buffer.data(), 100);
-
-            if (readerDone_ && sharedMemory.empty()) {
-                sharedMemory.destroy();
+            if (readerDone_ && sharedMemory_.empty()) {
+                sharedMemory_.destroy();
                 break;
             }
         }

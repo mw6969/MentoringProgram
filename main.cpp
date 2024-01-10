@@ -10,7 +10,6 @@ int main(int argc, char *argv[]) {
     }
 
     Tool tool;
-
     if (pid_t c_pid{fork()}; c_pid == -1) {
         std::cout << "Fork error\n";
         return -1;

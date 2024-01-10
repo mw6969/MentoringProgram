@@ -38,6 +38,9 @@ SharedMutex::~SharedMutex() {
 
     // Release the shared memory object
     shm_unlink(MYMUTEX);
+
+    // Unmap the shared memory object
+    munmap(mutex_, sizeof(pthread_mutex_t));
 }
 
 pthread_mutex_t* SharedMutex::get() {

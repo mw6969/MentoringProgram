@@ -18,9 +18,9 @@ public:
     SharedMemory();
     ~SharedMemory() = default;
 
-    void push(const std::string& data);
+    void push(char* data);
     void pop();
-    String front();
+    char* front();
     void destroy();
     bool empty();
     size_t size();
