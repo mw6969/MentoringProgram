@@ -24,16 +24,17 @@ SharedMutex::SharedMutex() {
         std::cerr << "mmap failed with " << MYMUTEX << "\n";
 
     // Set mutex shared between processes
-    pthread_mutexattr_t mattr;
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-    pthread_mutex_init(mutex_, &mattr);
-    pthread_mutexattr_destroy(&mattr);
+    pthread_mutexattr_init(&mutexattr_);
+    pthread_mutexattr_setpshared(&mutexattr_, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(mutex_, &mutexattr_);
 }
 
 SharedMutex::~SharedMutex() {
     // Destroy mutex
     pthread_mutex_destroy(mutex_);
+
+    // Destroy mutex attribute
+    pthread_mutexattr_destroy(&mutexattr_);
 
     // Release the shared memory object
     shm_unlink(MYMUTEX);

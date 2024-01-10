@@ -12,6 +12,7 @@ public:
     pthread_mutex_t* get();
 
 private:
+    pthread_mutexattr_t mutexattr_;
     pthread_mutex_t* mutex_;
     int id_;
 };

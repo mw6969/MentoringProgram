@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include "Tool.h"
-#include "SharedMemory.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -10,7 +9,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    SharedMemory sharedMemory;
     Tool tool;
 
     if (pid_t c_pid{fork()}; c_pid == -1) {

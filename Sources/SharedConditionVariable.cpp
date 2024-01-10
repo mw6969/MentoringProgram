@@ -24,16 +24,17 @@ SharedConditionVariable::SharedConditionVariable() {
         std::cerr << "mmap failed with " << MYCOND << "\n";
 
     // Set mutex shared between processes
-    pthread_condattr_t cattr;
-    pthread_condattr_init(&cattr);
-    pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
-    pthread_cond_init(conditionVariable_, &cattr);
-    pthread_condattr_destroy(&cattr);
+    pthread_condattr_init(&condattr_);
+    pthread_condattr_setpshared(&condattr_, PTHREAD_PROCESS_SHARED);
+    pthread_cond_init(conditionVariable_, &condattr_);
 }
 
 SharedConditionVariable::~SharedConditionVariable() {
-    // Destroy mutex
+    // Destroy condition variable
     pthread_cond_destroy(conditionVariable_);
+
+    // Destroy condition variable attribute
+    pthread_condattr_destroy(&condattr_);
 
     // Release the shared memory object
     shm_unlink(MYCOND);

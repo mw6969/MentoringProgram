@@ -1,6 +1,6 @@
 #include <fstream>
 #include <iostream>
-
+ 
 #include "SharedMemory.h"
 #include "SharedConditionVariable.h"
 #include "SharedMutex.h"
@@ -11,17 +11,17 @@ void Tool::reader(const std::string& fileName) {
     if (inFile.is_open()) {
         std::cout << "Reader has started\n";
 
-        while (inFile) {
-            SharedMemory sharedMemory;
-            SharedMutex mutex;
-            SharedConditionVariable conditionVariable;
+        SharedMemory sharedMemory;
+        SharedMutex mutex;
+        SharedConditionVariable conditionVariable;
 
+        while (inFile) {
             pthread_mutex_lock(mutex.get());
 
-            std::string buffer;
-            inFile.read(buffer.data(), 100);
-            sharedMemory.push(buffer.data());
-            sharedMemory.print();
+            size_t bufferSize{100};
+            char* buffer{new char[bufferSize]};
+            inFile.read(buffer, bufferSize);
+            sharedMemory.push(buffer);
 
             pthread_cond_signal(conditionVariable.get());
             pthread_mutex_unlock(mutex.get());
@@ -41,13 +41,16 @@ void Tool::writer(const std::string& fileName) {
     if (outFile.is_open()) {
         std::cout << "Writer has started\n";
 
-        while (true) {
-            SharedMemory sharedMemory;
-            SharedMutex mutex;
-            SharedConditionVariable conditionVariable;
+        SharedMemory sharedMemory;
+        SharedMutex mutex;
+        SharedConditionVariable conditionVariable;
 
+        while (true) {
             pthread_mutex_lock(mutex.get());
-            pthread_cond_wait(conditionVariable.get(), mutex.get());
+
+            if (sharedMemory.empty()) {
+                pthread_cond_wait(conditionVariable.get(), mutex.get());
+            }
 
             std::string buffer{sharedMemory.front().data};
             sharedMemory.pop();

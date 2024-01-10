@@ -2,7 +2,7 @@
 #define _SHAREDMEMORY_
 
 #include <stddef.h>
-
+#include <string>
 struct String {
     size_t identifier;
     char* data;
@@ -18,12 +18,12 @@ public:
     SharedMemory();
     ~SharedMemory() = default;
 
-    void push(char* data);
+    void push(const std::string& data);
     void pop();
     String front();
     void destroy();
     bool empty();
-    void print();
+    size_t size();
 
 private:
     Collection* collection_;

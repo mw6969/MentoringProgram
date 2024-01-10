@@ -9,8 +9,6 @@ SharedMemory::SharedMemory() {
     id_ = shmget(696969, sizeof(Collection), IPC_CREAT | 0666);
     if (id_ < 0)
         std::cerr << "Error getting shared memory segment of 'Collection' class\n";
-    else
-        collection_->size = 0;
 
     // Attach shared memory segment of 'Collection' class
     collection_ = (Collection*)shmat(id_, (void*)0, 0);
@@ -26,11 +24,13 @@ SharedMemory::SharedMemory() {
     collection_->strings = (String*)shmat(id_, (void*)0, 0);
     if (collection_->strings == (String*)(-1))
         std::cerr << "Error attaching shared memory segment of 'String' class\n";
+    
+    collection_->size = 0;
 }
 
-void SharedMemory::push(char* data) {
+void SharedMemory::push(const std::string& data) {
     // Get shared memory segment of 'data' member
-    id_ = shmget(collection_->size, (strlen(data) * sizeof(char)), IPC_CREAT | 0666);
+    id_ = shmget(88, (200 * sizeof(char)), IPC_CREAT | 0666);
     if (id_ < 0)
         std::cerr << "Error getting shared memory segment of 'data' member\n";
 
@@ -40,9 +40,8 @@ void SharedMemory::push(char* data) {
         std::cerr << "Error attaching shared memory segment of 'data' member\n";
 
     collection_->strings[collection_->size].identifier = collection_->size;
-    collection_->strings[collection_->size].data = data;
+    strcpy(collection_->strings[collection_->size].data, data.c_str());
     collection_->size++;
-
 }
 
 void SharedMemory::pop() {
@@ -69,9 +68,6 @@ bool SharedMemory::empty() {
     return collection_->size == 0;
 }
 
-void SharedMemory::print() {
-    std::cout << collection_->size << "\n";
-    for (int i = 0; i < collection_->size; i++) {
-        std::cout << collection_->strings[i].data << "\n";
-    }
+size_t SharedMemory::size() {
+    return collection_->size;
 }

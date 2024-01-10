@@ -12,6 +12,7 @@ public:
     pthread_cond_t* get();
 
 private:
+    pthread_condattr_t condattr_;
     pthread_cond_t* conditionVariable_;
     int id_;
 };
