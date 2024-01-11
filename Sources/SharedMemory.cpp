@@ -44,16 +44,23 @@ void SharedMemory::push(char* data) {
     collection_->size++;
 }
 
-void SharedMemory::pop() {
+void SharedMemory::popFront() {
     if (collection_->size >= 0) {
-        // Detach last shared memory segment of 'data' member
-        shmdt(collection_->strings[collection_->size - 1].data);
+        // Reorder collection
+        for (int i = 0; i < collection_->size; i++) {
+            if (i == collection_->size - 1)
+                continue;
+            
+            collection_->strings[i].identifier = collection_->strings[i + 1].identifier;
+            collection_->strings[i].data = collection_->strings[i + 1].data;
+        }
+
         collection_->size--;
     }
 }
 
 char* SharedMemory::front() {
-    return collection_->strings[collection_->size - 1].data;
+    return collection_->strings[0].data;
 }
 
 void SharedMemory::destroy() {

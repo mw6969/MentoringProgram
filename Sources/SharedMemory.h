@@ -19,7 +19,7 @@ public:
     ~SharedMemory() = default;
 
     void push(char* data);
-    void pop();
+    void popFront();
     char* front();
     void destroy();
     bool empty();
