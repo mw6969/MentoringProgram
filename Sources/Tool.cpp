@@ -39,7 +39,6 @@ void Tool::writer(const std::string& fileName) {
 
             char* buffer{nullptr};
             if (char* data{sharedMemory_.front()}; data != nullptr) {
-                std::cout << data << "\n";
                 buffer = new char[strlen(data)];
                 strcpy(buffer, data);
                 sharedMemory_.popFront();
