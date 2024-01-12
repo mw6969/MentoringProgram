@@ -6,75 +6,84 @@
 
 SharedMemory::SharedMemory() {
     // Get shared memory segment of 'Collection' class
-    id_ = shmget(696969, sizeof(Collection), IPC_CREAT | 0666);
-    if (id_ < 0)
+    collectionId_ = shmget(123, sizeof(Collection), IPC_CREAT | 0666);
+    if (collectionId_ < 0) {
         std::cerr << "Error getting shared memory segment of 'Collection' class\n";
+        return;
+    }
 
     // Attach shared memory segment of 'Collection' class
-    collection_ = (Collection*)shmat(id_, (void*)0, 0);
-    if (collection_ == (Collection*)(-1))
+    collection_ = (Collection*)shmat(collectionId_, NULL, 0);
+    if (collection_ < (Collection*)NULL) {
         std::cerr << "Error attaching shared memory segment of 'Collection' class\n";
+        return;
+    }
     
     // Get shared memory segment of 'String' class
-    id_ = shmget(969696, (sizeof(String)), IPC_CREAT | 0666);
-    if (id_ < 0)
+    stringId_ = shmget(1234, (sizeof(String)), IPC_CREAT | 0666);
+    if (stringId_ < 0) {
         std::cerr << "Error getting shared memory segment of 'String' class\n";
+        return;
+    }
 
     // Attach shared memory segment of 'String' class
-    collection_->strings = (String*)shmat(id_, (void*)0, 0);
-    if (collection_->strings == (String*)(-1))
+    collection_->strings = (String*)shmat(stringId_, NULL, 0);
+    if (collection_->strings < (String*)NULL) {
         std::cerr << "Error attaching shared memory segment of 'String' class\n";
+        return;
+    }
     
+    collection_->first = 0;
     collection_->size = 0;
 }
 
 void SharedMemory::push(char* data) {
     // Get shared memory segment of 'data' member
-    id_ = shmget(6000 + collection_->size, (strlen(data) * sizeof(char)), IPC_CREAT | 0666);
-    if (id_ < 0)
+    int dataId = shmget(90 + collection_->size, (strlen(data) * sizeof(char)), IPC_CREAT | 0666);
+    if (dataId < 0) {
         std::cerr << "Error getting shared memory segment of 'data' member\n";
+        return;
+    }
 
     // Attach shared memory segment of 'data' member
-    collection_->strings[collection_->size].data = (char*)shmat(id_, (void*)0, 0);
-    if (collection_->strings[collection_->size].data == (char*)(-1))
+    collection_->strings[collection_->size].data = (char*)shmat(dataId, NULL, 0);
+    if (collection_->strings[collection_->size].data < (char*)NULL) {
         std::cerr << "Error attaching shared memory segment of 'data' member\n";
+        return;
+    }
 
-    collection_->strings[collection_->size].identifier = collection_->size;
+    collection_->strings[collection_->size].id = dataId;
     strcpy(collection_->strings[collection_->size].data, data);
     collection_->size++;
 }
 
 void SharedMemory::popFront() {
-    if (collection_->size >= 0) {
-        // Reorder collection
-        for (int i = 0; i < collection_->size; i++) {
-            if (i == collection_->size - 1)
-                continue;
-            
-            collection_->strings[i].identifier = collection_->strings[i + 1].identifier;
-            collection_->strings[i].data = collection_->strings[i + 1].data;
-        }
+    shmdt(collection_->strings[0].data);
+    shmctl(collection_->strings[0].id, IPC_RMID, 0);
 
-        collection_->size--;
-    }
+    collection_->first++;
 }
 
 char* SharedMemory::front() {
-    return collection_->strings[0].data;
+    if (collection_->first < collection_->size)
+    std::cout << collection_->strings[collection_->first].data << "\n";
+        return collection_->strings[collection_->first].data;
+    
+    return nullptr;
 }
 
 void SharedMemory::destroy() {
-    // Detach last shared memory segment of 'Collection' class
-    shmdt(collection_);
+    shmdt(collection_->strings);
+    shmctl(stringId_, IPC_RMID, 0);
 
-    // Remove identifier
-    shmctl(id_, IPC_RMID, 0);
+    shmdt(collection_);
+    shmctl(collectionId_, IPC_RMID, 0);
 }
 
 bool SharedMemory::empty() {
-    return collection_->size == 0;
+    return size() == 0;
 }
 
 size_t SharedMemory::size() {
-    return collection_->size;
+    return collection_->size - collection_->first;
 }

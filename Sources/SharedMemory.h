@@ -4,12 +4,13 @@
 #include <stddef.h>
 #include <string>
 struct String {
-    size_t identifier;
+    int id;
     char* data;
 };
 
 struct Collection {
     size_t size;
+    size_t first;
     String* strings;
 };
 class SharedMemory
@@ -27,7 +28,8 @@ public:
 
 private:
     Collection* collection_;
-    int id_;
+    int collectionId_;
+    int stringId_;
 };
 
 #endif

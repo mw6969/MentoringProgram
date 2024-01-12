@@ -4,8 +4,7 @@
 #include <string>
 
 #include "SharedMemory.h"
-#include "SharedConditionVariable.h"
-#include "SharedMutex.h"
+#include "SharedSemaphore.h"
 
 class Tool
 {
@@ -18,9 +17,8 @@ public:
 
 private:
     SharedMemory sharedMemory_;
-    SharedMutex mutex_;
-    SharedConditionVariable conditionVariable_;
     bool readerDone_;
+    SharedSemaphore ss;
 };
 
 #endif

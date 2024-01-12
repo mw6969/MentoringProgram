@@ -14,14 +14,13 @@ void Tool::reader(const std::string& fileName) {
         std::cout << "Error opening input file\n";
     } else {
         while (inFile.good()) {
-            pthread_mutex_lock(mutex_.get());
+            ss.acquire();
 
             std::string line;
             std::getline(inFile, line);
             sharedMemory_.push(line.data());
 
-            pthread_mutex_unlock(mutex_.get());
-            pthread_cond_signal(conditionVariable_.get());
+            ss.release();
         }
         inFile.close();
 
@@ -36,17 +35,20 @@ void Tool::writer(const std::string& fileName) {
         std::cout << "Writer has started\n";
 
         while (true) {
-            pthread_mutex_lock(mutex_.get());
-            if (sharedMemory_.empty())
-                pthread_cond_wait(conditionVariable_.get(), mutex_.get());
+            ss.acquire();
 
-            char* data{sharedMemory_.front()};
-            char* buffer{new char[strlen(data)]};
-            strcpy(buffer, data);
-            sharedMemory_.popFront();
+            char* buffer{nullptr};
+            if (char* data{sharedMemory_.front()}; data != nullptr) {
+                std::cout << data << "\n";
+                buffer = new char[strlen(data)];
+                strcpy(buffer, data);
+                sharedMemory_.popFront();
+            }
 
-            pthread_mutex_unlock(mutex_.get());
-            outFile.write(buffer, strlen(buffer));
+            ss.release();
+
+            if (buffer)
+                outFile.write(buffer, strlen(buffer));
 
             if (readerDone_ && sharedMemory_.empty()) {
                 sharedMemory_.destroy();
