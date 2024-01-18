@@ -2,63 +2,60 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
- 
+
 #include "Tool.h"
 
-void Tool::reader(const std::string& fileName) {
+void Tool::reader(const std::string &fileName) {
+  std::ifstream inFile{fileName.data(),
+                       std::ios_base::in | std::ios_base::binary};
+  if (inFile.is_open()) {
     std::cout << "Reader has started\n";
 
-    std::ifstream inFile;
-    inFile.open(fileName.data(), std::ios_base::in | std::ios_base::binary);
-    if (inFile.fail()) {
-        std::cout << "Error opening input file\n";
-    } else {
-        while (inFile.good()) {
-            ss.acquire();
+    while (inFile) {
+      ss.acquire();
 
-            std::string line;
-            std::getline(inFile, line);
-            sharedMemory_.push(line.data());
+      char buffer[100];
+      inFile.read(buffer, 100);
 
-            ss.release();
-        }
-        inFile.close();
+      sharedMemory_.push(buffer);
 
-        readerDone_ = true;
-        std::cout << "Reader has done\n";
+      ss.release();
     }
+    inFile.close();
+
+    readerDone_ = true;
+
+    std::cout << "Reader has done\n";
+  } else {
+    std::cout << "Error opening input file\n";
+  }
 }
 
-void Tool::writer(const std::string& fileName) {
-    std::ofstream outFile{fileName.data(), std::ios::app | std::ios_base::binary};
-    if (outFile.is_open()) {
-        std::cout << "Writer has started\n";
+void Tool::writer(const std::string &fileName) {
+  std::ofstream outFile{fileName.data(), std::ios::app | std::ios_base::binary};
+  if (outFile.is_open()) {
+    std::cout << "Writer has started\n";
 
-        while (true) {
-            ss.acquire();
+    while (true) {
+      ss.acquire();
 
-            char* buffer{nullptr};
-            if (char* data{sharedMemory_.front()}; data != nullptr) {
-                buffer = new char[strlen(data)];
-                strcpy(buffer, data);
-                sharedMemory_.popFront();
-            }
+      std::string front{sharedMemory_.front()};
+      sharedMemory_.popFront();
 
-            ss.release();
+      ss.release();
 
-            if (buffer)
-                outFile.write(buffer, strlen(buffer));
+      outFile.write(front.c_str(), front.length());
 
-            if (readerDone_ && sharedMemory_.empty()) {
-                sharedMemory_.destroy();
-                break;
-            }
-        }
-
-        outFile.close();
-
-        std::cout << "Writer has done\n";
-    } else {
-        std::cout << "Error opening output file\n";
+      if (readerDone_ && sharedMemory_.empty()) {
+        sharedMemory_.destroy();
+        break;
+      }
     }
+
+    outFile.close();
+
+    std::cout << "Writer has done\n";
+  } else {
+    std::cout << "Error opening output file\n";
+  }
 }

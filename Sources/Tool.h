@@ -6,19 +6,18 @@
 #include "SharedMemory.h"
 #include "SharedSemaphore.h"
 
-class Tool
-{
+class Tool {
 public:
-    Tool() = default;
-    ~Tool() = default;
+  Tool() = default;
+  ~Tool() = default;
 
-    void reader(const std::string& fileName);
-    void writer(const std::string& fileName);
+  void reader(const std::string &fileName);
+  void writer(const std::string &fileName);
 
 private:
-    SharedMemory sharedMemory_;
-    bool readerDone_;
-    SharedSemaphore ss;
+  SharedMemory sharedMemory_;
+  bool readerDone_;
+  SharedSemaphore ss;
 };
 
 #endif

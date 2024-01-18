@@ -3,20 +3,18 @@
 
 #include <string>
 
-class SharedSemaphore
-{
+class SharedSemaphore {
 public:
-    private:
-        char fileName[FILENAME_MAX];
-        int fileDescriptor;
+private:
+  char fileName[FILENAME_MAX];
+  int fileDescriptor;
 
+public:
+  SharedSemaphore();
+  ~SharedSemaphore();
 
-    public:
-        SharedSemaphore();
-        ~SharedSemaphore();
-
-        void acquire();
-        void release();
+  void acquire();
+  void release();
 };
 
 #endif

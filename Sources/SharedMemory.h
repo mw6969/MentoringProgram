@@ -4,32 +4,32 @@
 #include <stddef.h>
 #include <string>
 struct String {
-    int id;
-    char* data;
+  int id;
+  char data[];
 };
 
 struct Collection {
-    size_t size;
-    size_t first;
-    String* strings;
+  size_t size;
+  size_t first;
+  String *strings;
 };
-class SharedMemory
-{
+class SharedMemory {
 public:
-    SharedMemory();
-    ~SharedMemory() = default;
+  SharedMemory();
+  ~SharedMemory() = default;
 
-    void push(char* data);
-    void popFront();
-    char* front();
-    void destroy();
-    bool empty();
-    size_t size();
+  void push(const char *data);
+  void popFront();
+  const char *front();
+  void destroy();
+  bool empty();
+  size_t size();
+  void print();
 
 private:
-    Collection* collection_;
-    int collectionId_;
-    int stringId_;
+  Collection *collection_;
+  int collectionId_;
+  int stringId_;
 };
 
 #endif
