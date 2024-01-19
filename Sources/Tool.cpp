@@ -12,14 +12,14 @@ void Tool::reader(const std::string &fileName) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
-      ss.acquire();
+      sharedSemaphore_.acquire();
 
       char buffer[100];
       inFile.read(buffer, 100);
 
       sharedMemory_.push(buffer);
 
-      ss.release();
+      sharedSemaphore_.release();
     }
     inFile.close();
 
@@ -37,12 +37,12 @@ void Tool::writer(const std::string &fileName) {
     std::cout << "Writer has started\n";
 
     while (true) {
-      ss.acquire();
+      sharedSemaphore_.acquire();
 
       std::string front{sharedMemory_.front()};
       sharedMemory_.popFront();
 
-      ss.release();
+      sharedSemaphore_.release();
 
       outFile.write(front.c_str(), front.length());
 

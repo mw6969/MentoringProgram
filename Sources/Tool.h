@@ -17,7 +17,7 @@ public:
 private:
   SharedMemory sharedMemory_;
   bool readerDone_;
-  SharedSemaphore ss;
+  SharedSemaphore sharedSemaphore_;
 };
 
 #endif
