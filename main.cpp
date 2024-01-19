@@ -10,10 +10,10 @@ int main(int argc, char *argv[]) {
   }
 
   Tool tool;
-  if (pid_t c_pid{fork()}; c_pid == -1) {
-    std::cout << "Fork error\n";
+  if (pid_t pid{fork()}; pid == -1) {
+    std::cerr << "Fork error\n";
     return -1;
-  } else if (c_pid > 0) {
+  } else if (pid > 0) {
     tool.reader(argv[1]);
   } else {
     tool.writer(argv[2]);

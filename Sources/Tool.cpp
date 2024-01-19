@@ -14,7 +14,7 @@ void Tool::reader(const std::string &fileName) {
     while (inFile) {
       sharedSemaphore_.acquire();
 
-      char buffer[100];
+      char buffer[100] = {0};
       inFile.read(buffer, 100);
 
       sharedMemory_.push(buffer);
