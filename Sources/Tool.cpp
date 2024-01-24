@@ -32,7 +32,7 @@ void Tool::reader(const std::string &fileName) {
 }
 
 void Tool::writer(const std::string &fileName) {
-  std::ofstream outFile{fileName.data(), std::ios::app | std::ios_base::binary};
+  std::ofstream outFile{fileName.data(), std::ios_base::binary};
   if (outFile.is_open()) {
     std::cout << "Writer has started\n";
 
