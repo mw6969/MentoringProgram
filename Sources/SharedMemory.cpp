@@ -60,6 +60,6 @@ void SharedMemory::destroy() {
   shmctl(collectionId_, IPC_RMID, 0);
 }
 
-bool SharedMemory::empty() { return size() == 0; }
-
-size_t SharedMemory::size() { return collection_->size - collection_->first; }
+bool SharedMemory::empty() {
+  return collection_->size - collection_->first == 0;
+}

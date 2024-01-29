@@ -23,7 +23,6 @@ public:
   std::string front();
   void destroy();
   bool empty();
-  size_t size();
 
 private:
   Collection *collection_;
