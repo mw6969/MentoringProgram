@@ -5,7 +5,7 @@
 #include "SharedMemory.h"
 
 SharedMemory::SharedMemory() {
-  if (collectionId_ = shmget(69, sizeof(Collection), IPC_CREAT | 0666);
+  if (collectionId_ = shmget(66, sizeof(Collection), IPC_CREAT | 0666);
       collectionId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'Collection' class\n";
     return;
@@ -18,7 +18,7 @@ SharedMemory::SharedMemory() {
     return;
   }
 
-  if (stringId_ = shmget(96, (100 * sizeof(String)), IPC_CREAT | 0666);
+  if (stringId_ = shmget(99, (100 * sizeof(String)), IPC_CREAT | 0666);
       stringId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'String' class\n";
     return;
@@ -34,20 +34,22 @@ SharedMemory::SharedMemory() {
   collection_->size = 0;
 }
 
-void SharedMemory::push(const char *data) {
+void SharedMemory::push(const std::string &data) {
   collection_->strings[collection_->size].id = collection_->size;
-  strcpy(collection_->strings[collection_->size].data, data);
+  strcpy(collection_->strings[collection_->size].data, data.data());
 
   collection_->size++;
 }
 
 void SharedMemory::popFront() { collection_->first++; }
 
-const char *SharedMemory::front() {
-  if (collection_->first < collection_->size)
-    return collection_->strings[collection_->first].data;
+std::string SharedMemory::front() {
+  if (collection_->first < collection_->size) {
+    std::string data{collection_->strings[collection_->first].data};
+    return data;
+  }
 
-  return nullptr;
+  return "";
 }
 
 void SharedMemory::destroy() {
