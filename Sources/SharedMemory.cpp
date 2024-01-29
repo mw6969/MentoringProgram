@@ -5,7 +5,7 @@
 #include "SharedMemory.h"
 
 SharedMemory::SharedMemory() {
-  if (collectionId_ = shmget(9669699, sizeof(Collection), IPC_CREAT | 0666);
+  if (collectionId_ = shmget(69, sizeof(Collection), IPC_CREAT | 0666);
       collectionId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'Collection' class\n";
     return;
@@ -18,7 +18,7 @@ SharedMemory::SharedMemory() {
     return;
   }
 
-  if (stringId_ = shmget(9999669, (100 * sizeof(String)), IPC_CREAT | 0666);
+  if (stringId_ = shmget(96, (100 * sizeof(String)), IPC_CREAT | 0666);
       stringId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'String' class\n";
     return;

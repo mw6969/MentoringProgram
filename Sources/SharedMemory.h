@@ -5,7 +5,7 @@
 #include <string>
 struct String {
   int id;
-  char data[];
+  char data[100];
 };
 
 struct Collection {
@@ -24,7 +24,6 @@ public:
   void destroy();
   bool empty();
   size_t size();
-  void print();
 
 private:
   Collection *collection_;
