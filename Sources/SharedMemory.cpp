@@ -11,7 +11,7 @@ SharedMemory::SharedMemory() {
     return;
   }
 
-  if (collection_ = (Collection *)shmat(collectionId_, (void *)0, 0);
+  if (collection_ = (Collection *)shmat(collectionId_, nullptr, 0);
       collection_ == (Collection *)(-1)) {
     std::cerr
         << "Error attaching shared memory segment of 'Collection' class\n";
@@ -24,7 +24,7 @@ SharedMemory::SharedMemory() {
     return;
   }
 
-  if (collection_->strings = (String *)shmat(stringId_, (void *)0, 0);
+  if (collection_->strings = (String *)shmat(stringId_, nullptr, 0);
       collection_->strings == (String *)(-1)) {
     std::cerr << "Error attaching shared memory segment of 'String' class\n";
     return;
