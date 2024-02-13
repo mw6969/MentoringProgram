@@ -12,9 +12,6 @@ private:
 public:
   SharedSemaphore();
   ~SharedSemaphore();
-
-  void acquire();
-  void release();
 };
 
 #endif

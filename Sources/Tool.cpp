@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "SharedSemaphore.h"
 #include "Tool.h"
 
 void Tool::reader(const std::string &fileName) {
@@ -12,14 +13,12 @@ void Tool::reader(const std::string &fileName) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
-      sharedSemaphore_.acquire();
+      SharedSemaphore sharedSemaphore;
 
       char buffer[100] = {0};
       inFile.read(buffer, 99);
 
       sharedMemory_.push(buffer);
-
-      sharedSemaphore_.release();
     }
     inFile.close();
 
@@ -37,12 +36,13 @@ void Tool::writer(const std::string &fileName) {
     std::cout << "Writer has started\n";
 
     while (true) {
-      sharedSemaphore_.acquire();
+      std::string front;
+      {
+        SharedSemaphore sharedSemaphore;
 
-      std::string front{sharedMemory_.front()};
-      sharedMemory_.popFront();
-
-      sharedSemaphore_.release();
+        front = sharedMemory_.front();
+        sharedMemory_.popFront();
+      }
 
       outFile.write(front.c_str(), front.length());
 

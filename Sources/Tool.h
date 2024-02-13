@@ -4,7 +4,6 @@
 #include <string>
 
 #include "SharedMemory.h"
-#include "SharedSemaphore.h"
 
 class Tool {
 public:
@@ -17,7 +16,6 @@ public:
 private:
   SharedMemory sharedMemory_;
   bool readerDone_;
-  SharedSemaphore sharedSemaphore_;
 };
 
 #endif
