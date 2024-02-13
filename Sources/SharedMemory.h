@@ -3,9 +3,12 @@
 
 #include <stddef.h>
 #include <string>
+
+constexpr int stringsMaxLength = 100;
+
 struct String {
   int id;
-  char data[100];
+  char data[stringsMaxLength];
 };
 
 struct Collection {

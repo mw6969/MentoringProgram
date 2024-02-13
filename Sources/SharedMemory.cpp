@@ -4,8 +4,11 @@
 
 #include "SharedMemory.h"
 
+constexpr int collectionKey = 66;
+constexpr int stringKey = 99;
+
 SharedMemory::SharedMemory() {
-  if (collectionId_ = shmget(66, sizeof(Collection), IPC_CREAT | 0666);
+  if (collectionId_ = shmget(collectionKey, sizeof(Collection), IPC_CREAT | 0666);
       collectionId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'Collection' class\n";
     return;
@@ -18,7 +21,7 @@ SharedMemory::SharedMemory() {
     return;
   }
 
-  if (stringId_ = shmget(99, (100 * sizeof(String)), IPC_CREAT | 0666);
+  if (stringId_ = shmget(stringKey, (stringsMaxLength * sizeof(String)), IPC_CREAT | 0666);
       stringId_ < 0) {
     std::cerr << "Error getting shared memory segment of 'String' class\n";
     return;
