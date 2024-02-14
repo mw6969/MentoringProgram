@@ -13,12 +13,22 @@ void Tool::reader(const std::string &fileName) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
-      SharedSemaphore sharedSemaphore;
+      short index;
+      {
+        SharedSemaphore sharedSemaphore;
+        index = sharedMemory_.getFreeBufferIndex();
+      }
 
-      char buffer[100] = {0};
-      inFile.read(buffer, 99);
+      if (index > -1) {
+        char buffer[100] = {0};
+        inFile.read(buffer, 99);
+        sharedMemory_.setData(index, buffer);
+      }
 
-      sharedMemory_.push(buffer);
+      {
+        SharedSemaphore sharedSemaphore;
+        sharedMemory_.setReadyForWriteBufferIndex(index);
+      }
     }
     inFile.close();
 
@@ -36,19 +46,30 @@ void Tool::writer(const std::string &fileName) {
     std::cout << "Writer has started\n";
 
     while (true) {
-      std::string front;
+      std::string data;
+      short index;
       {
         SharedSemaphore sharedSemaphore;
+        index = sharedMemory_.getFirstReadyForWriteBufferIndex();
 
-        front = sharedMemory_.front();
-        sharedMemory_.popFront();
+        if (index > -1) {
+          sharedMemory_.shiftFirstReadyForWriteBufferIndex();
+          data = sharedMemory_.getData(index);
+        }
       }
 
-      outFile.write(front.c_str(), front.length());
+      if (!data.empty()) {
+        outFile.write(data.c_str(), data.length());
+      }
 
-      if (readerDone_ && sharedMemory_.empty()) {
-        sharedMemory_.destroy();
-        break;
+      {
+        SharedSemaphore sharedSemaphore;
+        sharedMemory_.setFirstFreeBufferIndex(index);
+      }
+
+      if (readerDone_ && sharedMemory_.checkFreeBufferIndex()) {
+       sharedMemory_.destroy();
+       break;
       }
     }
 

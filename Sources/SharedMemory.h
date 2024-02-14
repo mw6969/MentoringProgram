@@ -4,33 +4,31 @@
 #include <stddef.h>
 #include <string>
 
-constexpr int stringsMaxLength = 100;
-
-struct String {
-  int id;
-  char data[stringsMaxLength];
-};
-
-struct Collection {
-  size_t size;
-  size_t first;
-  String *strings;
+constexpr short BuffersCount = 5;
+constexpr short DataLength = 100;
+struct Buffer {
+  short freeIndexes[BuffersCount];
+  short readyForWriteIndexes[BuffersCount];
+  char data[BuffersCount][DataLength];
 };
 class SharedMemory {
 public:
   SharedMemory();
   ~SharedMemory() = default;
 
-  void push(const std::string &data);
-  void popFront();
-  std::string front();
+  void setData(const short index, const std::string &data);
+  std::string getData(const short index)const;
+  short getFreeBufferIndex() const;
+  void setFirstFreeBufferIndex(const short index);
+  void setReadyForWriteBufferIndex(const short index);
+  short getFirstReadyForWriteBufferIndex() const;
+  void shiftFirstReadyForWriteBufferIndex();
+  bool checkFreeBufferIndex();
   void destroy();
-  bool empty();
 
 private:
-  Collection *collection_;
-  int collectionId_;
-  int stringId_;
+  Buffer *buffer_;
+  int id_;
 };
 
 #endif

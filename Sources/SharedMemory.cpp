@@ -4,65 +4,82 @@
 
 #include "SharedMemory.h"
 
-constexpr int collectionKey = 66;
-constexpr int stringKey = 99;
+constexpr int SharedMemoryKey = 99;
 
 SharedMemory::SharedMemory() {
-  if (collectionId_ = shmget(collectionKey, sizeof(Collection), IPC_CREAT | 0666);
-      collectionId_ < 0) {
+  if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666); id_ < 0) {
     std::cerr << "Error getting shared memory segment of 'Collection' class\n";
     return;
   }
 
-  if (collection_ = (Collection *)shmat(collectionId_, nullptr, 0);
-      collection_ == (Collection *)(-1)) {
-    std::cerr
-        << "Error attaching shared memory segment of 'Collection' class\n";
+  if (buffer_ = (Buffer *)shmat(id_, nullptr, 0); buffer_ == (Buffer *)(-1)) {
+    std::cerr << "Error attaching shared memory segment of 'Collection' class\n";
     return;
   }
 
-  if (stringId_ = shmget(stringKey, (stringsMaxLength * sizeof(String)), IPC_CREAT | 0666);
-      stringId_ < 0) {
-    std::cerr << "Error getting shared memory segment of 'String' class\n";
-    return;
+  for (size_t i = 0; i < BuffersCount; i++) {
+    buffer_->freeIndexes[i] = i;
+    buffer_->readyForWriteIndexes[i] = -1;
   }
-
-  if (collection_->strings = (String *)shmat(stringId_, nullptr, 0);
-      collection_->strings == (String *)(-1)) {
-    std::cerr << "Error attaching shared memory segment of 'String' class\n";
-    return;
-  }
-
-  collection_->first = 0;
-  collection_->size = 0;
 }
 
-void SharedMemory::push(const std::string &data) {
-  collection_->strings[collection_->size].id = collection_->size;
-  strcpy(collection_->strings[collection_->size].data, data.data());
-
-  collection_->size++;
+void SharedMemory::setData(const short index, const std::string &data) {
+  strcpy(buffer_->data[index], data.data());
 }
 
-void SharedMemory::popFront() { collection_->first++; }
+std::string SharedMemory::getData(const short index) const {
+  return buffer_->data[index];
+}
 
-std::string SharedMemory::front() {
-  if (collection_->first < collection_->size) {
-    std::string data{collection_->strings[collection_->first].data};
-    return data;
+short SharedMemory::getFreeBufferIndex() const {
+  for (size_t i = 0; i < BuffersCount; i++) {
+    if (buffer_->freeIndexes[i] > -1) {
+      int index = buffer_->freeIndexes[i];
+      buffer_->freeIndexes[i] = -1;
+      return index;
+    }
   }
 
-  return "";
+  return -1;
+}
+
+void SharedMemory::setFirstFreeBufferIndex(const short index) {
+  for (size_t i = 0; i < BuffersCount; i++) {
+    if (buffer_->freeIndexes[i] == -1) {
+      buffer_->freeIndexes[i] = index;
+      break;
+    }
+  }
+}
+
+void SharedMemory::setReadyForWriteBufferIndex(const short index) {
+  buffer_->readyForWriteIndexes[index] = index;
+}
+
+bool SharedMemory::checkFreeBufferIndex() {
+  for (size_t i = 0; i < BuffersCount; i++) {
+    if (buffer_->freeIndexes[i] == -1) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void SharedMemory::destroy() {
-  shmdt(collection_->strings);
-  shmctl(stringId_, IPC_RMID, 0);
-
-  shmdt(collection_);
-  shmctl(collectionId_, IPC_RMID, 0);
+  shmdt(buffer_);
+  shmctl(id_, IPC_RMID, 0);
 }
 
-bool SharedMemory::empty() {
-  return collection_->size - collection_->first == 0;
+void SharedMemory::shiftFirstReadyForWriteBufferIndex() {
+  buffer_->readyForWriteIndexes[0] = -1;
+}
+
+short SharedMemory::getFirstReadyForWriteBufferIndex() const {
+  for (size_t i = 0; i < BuffersCount; i++) {
+    if (buffer_->readyForWriteIndexes[i] > -1) {
+      return buffer_->readyForWriteIndexes[i];
+    }
+  }
+  return -1;
 }
