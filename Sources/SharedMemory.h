@@ -1,7 +1,6 @@
 #ifndef _SHAREDMEMORY_
 #define _SHAREDMEMORY_
 
-#include <stddef.h>
 #include <string>
 
 constexpr short BuffersCount = 5;

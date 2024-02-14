@@ -1,5 +1,4 @@
 
-#include <cstring>
 #include <fstream>
 #include <iostream>
 
@@ -7,9 +6,7 @@
 #include "Tool.h"
 
 void Tool::reader(const std::string &fileName) {
-  std::ifstream inFile{fileName.data(),
-                       std::ios_base::in | std::ios_base::binary};
-  if (inFile.is_open()) {
+  if (std::ifstream inFile{fileName.data(), std::ios_base::in | std::ios_base::binary}; inFile.is_open()) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
@@ -41,8 +38,7 @@ void Tool::reader(const std::string &fileName) {
 }
 
 void Tool::writer(const std::string &fileName) {
-  std::ofstream outFile{fileName.data(), std::ios_base::binary};
-  if (outFile.is_open()) {
+  if (std::ofstream outFile{fileName.data(), std::ios_base::binary}; outFile.is_open()) {
     std::cout << "Writer has started\n";
 
     while (true) {
