@@ -1,17 +1,16 @@
 #ifndef _SHAREDSEMAPHORE_
 #define _SHAREDSEMAPHORE_
 
-#include <string>
+#include <stdio.h>
 
 class SharedSemaphore {
 public:
+  SharedSemaphore();
+  ~SharedSemaphore();
+
 private:
   char fileName[FILENAME_MAX];
   int fileDescriptor;
-
-public:
-  SharedSemaphore();
-  ~SharedSemaphore();
 };
 
 #endif
