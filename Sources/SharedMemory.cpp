@@ -4,7 +4,7 @@
 
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 99;
+constexpr int SharedMemoryKey = 999;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666); id_ < 0) {
@@ -72,7 +72,12 @@ void SharedMemory::destroy() {
 }
 
 void SharedMemory::shiftFirstReadyForWriteBufferIndex() {
-  buffer_->readyForWriteIndexes[0] = -1;
+  for (size_t i = 0; i < BuffersCount; i++) {
+    if (buffer_->readyForWriteIndexes[i] != -1) {
+      buffer_->readyForWriteIndexes[i] = -1;
+      break;
+    }
+  }
 }
 
 short SharedMemory::getFirstReadyForWriteBufferIndex() const {
