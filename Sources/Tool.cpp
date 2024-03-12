@@ -6,7 +6,9 @@
 #include "Tool.h"
 
 void Tool::reader(const std::string &fileName) {
-  if (std::ifstream inFile{fileName.data(), std::ios_base::in | std::ios_base::binary}; inFile.is_open()) {
+  if (std::ifstream inFile{fileName.data(),
+                           std::ios_base::in | std::ios_base::binary};
+      inFile.is_open()) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
@@ -29,7 +31,7 @@ void Tool::reader(const std::string &fileName) {
     }
     inFile.close();
 
-    readerDone_ = true;
+    sharedMemory_.setReaderDone(true);
 
     std::cout << "Reader has done\n";
   } else {
@@ -38,7 +40,8 @@ void Tool::reader(const std::string &fileName) {
 }
 
 void Tool::writer(const std::string &fileName) {
-  if (std::ofstream outFile{fileName.data(), std::ios_base::binary}; outFile.is_open()) {
+  if (std::ofstream outFile{fileName.data(), std::ios_base::binary};
+      outFile.is_open()) {
     std::cout << "Writer has started\n";
 
     while (true) {
@@ -63,9 +66,10 @@ void Tool::writer(const std::string &fileName) {
         sharedMemory_.setFirstFreeBufferIndex(index);
       }
 
-      if (readerDone_ && sharedMemory_.checkFreeBufferIndex()) {
-       sharedMemory_.destroy();
-       break;
+      if (sharedMemory_.isReaderDone() &&
+          sharedMemory_.checkFreeBufferIndex()) {
+        sharedMemory_.destroy();
+        break;
       }
     }
 

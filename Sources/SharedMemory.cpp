@@ -7,13 +7,15 @@
 constexpr int SharedMemoryKey = 999;
 
 SharedMemory::SharedMemory() {
-  if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666); id_ < 0) {
+  if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
+      id_ < 0) {
     std::cerr << "Error getting shared memory segment of 'Collection' class\n";
     return;
   }
 
   if (buffer_ = (Buffer *)shmat(id_, nullptr, 0); buffer_ == (Buffer *)(-1)) {
-    std::cerr << "Error attaching shared memory segment of 'Collection' class\n";
+    std::cerr
+        << "Error attaching shared memory segment of 'Collection' class\n";
     return;
   }
 
@@ -21,6 +23,8 @@ SharedMemory::SharedMemory() {
     buffer_->freeIndexes[i] = i;
     buffer_->readyForWriteIndexes[i] = -1;
   }
+
+  buffer_->readerDone = false;
 }
 
 void SharedMemory::setData(const short index, const std::string &data) {
@@ -88,3 +92,7 @@ short SharedMemory::getFirstReadyForWriteBufferIndex() const {
   }
   return -1;
 }
+
+void SharedMemory::setReaderDone(bool value) { buffer_->readerDone = value; }
+
+bool SharedMemory::isReaderDone() const { return buffer_->readerDone; }

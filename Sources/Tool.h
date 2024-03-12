@@ -15,7 +15,6 @@ public:
 
 private:
   SharedMemory sharedMemory_;
-  bool readerDone_;
 };
 
 #endif
