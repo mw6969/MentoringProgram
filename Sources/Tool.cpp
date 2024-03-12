@@ -22,9 +22,7 @@ void Tool::reader(const std::string &fileName) {
         char buffer[100] = {0};
         inFile.read(buffer, 99);
         sharedMemory_.setData(index, buffer);
-      }
 
-      {
         SharedSemaphore sharedSemaphore;
         sharedMemory_.setReadyForWriteBufferIndex(index);
       }
