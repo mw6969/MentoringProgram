@@ -18,15 +18,16 @@ public:
 
   void setData(const short index, const std::string &data);
   std::string getData(const short index) const;
-  short getFreeBufferIndex() const;
-  void setFirstFreeBufferIndex(const short index);
-  void setReadyForWriteBufferIndex(const short index);
-  short getFirstReadyForWriteBufferIndex() const;
-  void shiftFirstReadyForWriteBufferIndex();
-  bool checkFreeBufferIndex();
-  void destroy();
-  void setReaderDone(bool value);
+  short getFreeBufferIndex();
+  short getReadyForWriteBufferIndex();
+  bool isBufferFree() const;
+  void setReaderDone(const bool value);
   bool isReaderDone() const;
+  void destroy();
+
+private:
+  void setReadyForWriteBufferIndex(const short index);
+  void setFirstFreeBufferIndex(const short index);
 
 private:
   Buffer *buffer_;

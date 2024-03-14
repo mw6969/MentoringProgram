@@ -6,7 +6,8 @@
 SharedSemaphore::SharedSemaphore() {
   snprintf(fileName, sizeof(fileName), "/tmp/.%s", "myappname");
 
-  if (fileDescriptor = open(fileName, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR); fileDescriptor != -1) {
+  if (fileDescriptor = open(fileName, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+      fileDescriptor != -1) {
     lockf(fileDescriptor, F_LOCK, 0);
   }
 }
