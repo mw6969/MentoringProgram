@@ -49,8 +49,7 @@ short SharedMemory::getFreeBufferIndex() {
 
 bool SharedMemory::isBufferFree() const {
   for (size_t i = 0; i < BuffersCount; i++) {
-    if ((buffer_->freeIndexes[i] == -1) ||
-        (buffer_->readyForWriteIndexes[i] != -1)) {
+    if (buffer_->readyForWriteIndexes[i] != -1) {
       return false;
     }
   }
