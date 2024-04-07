@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "NamedMutex.h"
 #include "SharedMemory.h"
 
 class Tool {

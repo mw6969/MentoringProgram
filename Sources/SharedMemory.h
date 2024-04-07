@@ -5,10 +5,16 @@
 
 constexpr short BuffersCount = 5;
 constexpr short DataLength = 100;
+
+struct Data {
+  char size;
+  char data[DataLength];
+};
+
 struct Buffer {
   short freeIndexes[BuffersCount];
   short readyForWriteIndexes[BuffersCount];
-  char data[BuffersCount][DataLength];
+  Data data[BuffersCount];
   bool readerDone;
 };
 class SharedMemory {
@@ -16,7 +22,7 @@ public:
   SharedMemory();
   ~SharedMemory() = default;
 
-  void setData(const short index, const std::string &data);
+  void setData(const short index, const char data[], const size_t size);
   std::string getData(const short index) const;
   short getFreeBufferIndex();
   short getReadyForWriteBufferIndex();

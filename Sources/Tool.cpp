@@ -2,8 +2,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "SharedSemaphore.h"
 #include "Tool.h"
+
+const char *name = "my_mutex_qwe10";
 
 void Tool::reader(const std::string &fileName) {
   if (std::ifstream inFile{fileName.data(),
@@ -12,12 +13,14 @@ void Tool::reader(const std::string &fileName) {
     std::cout << "Reader has started\n";
 
     while (inFile) {
-      SharedSemaphore sharedSemaphore;
-      if (short index = sharedMemory_.getFreeBufferIndex(); index > -1) {
+      NamedMutex namedMutex(name);
+      namedMutex.lock();
+      if (short index = sharedMemory_.getFreeBufferIndex(); index != -1) {
         char buffer[100] = {0};
-        inFile.read(buffer, 99);
-        sharedMemory_.setData(index, buffer);
+        inFile.read(buffer, sizeof(buffer) - 1);
+        sharedMemory_.setData(index, buffer, inFile.gcount());
       }
+      namedMutex.unlock();
     }
     inFile.close();
 
@@ -36,16 +39,19 @@ void Tool::writer(const std::string &fileName) {
 
     while (true) {
       {
-        SharedSemaphore sharedSemaphore;
+        NamedMutex namedMutex(name);
+        namedMutex.lock();
         if (short index = sharedMemory_.getReadyForWriteBufferIndex();
-            index > -1) {
+            index != -1) {
           if (std::string data = sharedMemory_.getData(index); !data.empty()) {
             outFile.write(data.c_str(), data.length());
           }
         }
+        namedMutex.unlock();
       }
 
       if (sharedMemory_.isReaderDone() && sharedMemory_.isBufferFree()) {
+        shm_unlink(name);
         sharedMemory_.destroy();
         break;
       }
