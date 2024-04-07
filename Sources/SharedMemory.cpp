@@ -5,7 +5,7 @@
 
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 260;
+constexpr int SharedMemoryKey = 286;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
