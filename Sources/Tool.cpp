@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "NamedMutex.h"
 #include "Tool.h"
 
 const char *name = "my_mutex_qwe10";
