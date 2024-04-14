@@ -5,7 +5,7 @@
 
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 286;
+constexpr int SharedMemoryKey = 1007;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
@@ -27,26 +27,20 @@ SharedMemory::SharedMemory() {
   buffer_->readerDone = false;
 }
 
-void SharedMemory::setData(const short index, const char data[],
-                           const size_t size) {
-  memcpy(buffer_->data[index].data, data, size);
-  buffer_->data[index].size = size;
-}
-
 std::string SharedMemory::getData(const short index) const {
   return std::string(buffer_->data[index].data, buffer_->data[index].size);
 }
 
-short SharedMemory::getFreeBufferIndex() {
+Data *SharedMemory::getFreeBuffer() {
   for (size_t i = 0; i < BuffersCount; ++i) {
     if (buffer_->freeIndexes[i] != -1) {
       short index = buffer_->freeIndexes[i];
       buffer_->freeIndexes[i] = -1;
       setReadyForWriteBufferIndex(index);
-      return index;
+      return &buffer_->data[index];
     }
   }
-  return -1;
+  return nullptr;
 }
 
 bool SharedMemory::isBufferFree() const {

@@ -22,9 +22,8 @@ public:
   SharedMemory();
   ~SharedMemory() = default;
 
-  void setData(const short index, const char data[], const size_t size);
   std::string getData(const short index) const;
-  short getFreeBufferIndex();
+  Data *getFreeBuffer();
   short getReadyForWriteBufferIndex();
   bool isBufferFree() const;
   void setReaderDone(const bool value);
