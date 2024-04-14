@@ -5,7 +5,7 @@
 #include "NamedMutex.h"
 #include "Tool.h"
 
-const char *name = "my_mutex_qwe1012";
+const char *name = "my_mutex_qwe1013";
 
 void Tool::reader(const std::string &fileName) {
   if (std::ifstream inFile{fileName.data(),
@@ -13,8 +13,8 @@ void Tool::reader(const std::string &fileName) {
       inFile.is_open()) {
     std::cout << "Reader has started\n";
 
+    NamedMutex namedMutex(name);
     while (inFile) {
-      NamedMutex namedMutex(name);
       namedMutex.lock();
       if (auto buffer = sharedMemory_.getFreeBuffer(); buffer != nullptr) {
         inFile.read(buffer->data, 99);
@@ -37,9 +37,9 @@ void Tool::writer(const std::string &fileName) {
       outFile.is_open()) {
     std::cout << "Writer has started\n";
 
+    NamedMutex namedMutex(name);
     while (true) {
       {
-        NamedMutex namedMutex(name);
         namedMutex.lock();
         if (auto buffer = sharedMemory_.getReadyForWriteBuffer();
             buffer != nullptr) {
