@@ -24,15 +24,16 @@ public:
 
   std::string getData(const short index) const;
   Data *getFreeBuffer();
-  short getReadyForWriteBufferIndex();
-  bool isBufferFree() const;
+  Data *getReadyForWriteBuffer();
+  bool attemptRelease() const;
   void setReaderDone(const bool value);
-  bool isReaderDone() const;
   void destroy();
 
 private:
   void setReadyForWriteBufferIndex(const short index);
   void setFirstFreeBufferIndex(const short index);
+  bool isBufferFree() const;
+  bool isReaderDone() const;
 
 private:
   Buffer *buffer_;

@@ -5,7 +5,7 @@
 
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 1007;
+constexpr int SharedMemoryKey = 1012;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
@@ -43,6 +43,13 @@ Data *SharedMemory::getFreeBuffer() {
   return nullptr;
 }
 
+void SharedMemory::setReadyForWriteBufferIndex(const short index) {
+  assert(buffer_->readyForWriteIndexes[BuffersCount - 1] == -1);
+  memcpy(buffer_->readyForWriteIndexes + 1, buffer_->readyForWriteIndexes,
+         (BuffersCount - 1) * sizeof(buffer_->readyForWriteIndexes[0]));
+  buffer_->readyForWriteIndexes[0] = index;
+}
+
 bool SharedMemory::isBufferFree() const {
   for (size_t i = 0; i < BuffersCount; i++) {
     if (buffer_->readyForWriteIndexes[i] != -1) {
@@ -52,26 +59,16 @@ bool SharedMemory::isBufferFree() const {
   return true;
 }
 
-short SharedMemory::getReadyForWriteBufferIndex() {
-  short index = -1;
+Data *SharedMemory::getReadyForWriteBuffer() {
   for (int i = BuffersCount - 1; i >= 0; --i) {
     if (buffer_->readyForWriteIndexes[i] != -1) {
-      index = buffer_->readyForWriteIndexes[i];
+      short index = buffer_->readyForWriteIndexes[i];
       setFirstFreeBufferIndex(index);
       buffer_->readyForWriteIndexes[i] = -1;
-      break;
+      return &buffer_->data[index];
     }
   }
-  return index;
-}
-
-void SharedMemory::setReaderDone(bool value) { buffer_->readerDone = value; }
-
-bool SharedMemory::isReaderDone() const { return buffer_->readerDone; }
-
-void SharedMemory::destroy() {
-  shmdt(buffer_);
-  shmctl(id_, IPC_RMID, 0);
+  return nullptr;
 }
 
 void SharedMemory::setFirstFreeBufferIndex(const short index) {
@@ -83,9 +80,15 @@ void SharedMemory::setFirstFreeBufferIndex(const short index) {
   }
 }
 
-void SharedMemory::setReadyForWriteBufferIndex(const short index) {
-  assert(buffer_->readyForWriteIndexes[BuffersCount - 1] == -1);
-  memcpy(buffer_->readyForWriteIndexes + 1, buffer_->readyForWriteIndexes,
-         (BuffersCount - 1) * sizeof(buffer_->readyForWriteIndexes[0]));
-  buffer_->readyForWriteIndexes[0] = index;
+void SharedMemory::setReaderDone(bool value) { buffer_->readerDone = value; }
+
+bool SharedMemory::isReaderDone() const { return buffer_->readerDone; }
+
+bool SharedMemory::attemptRelease() const {
+  return isReaderDone() && isBufferFree();
+}
+
+void SharedMemory::destroy() {
+  shmdt(buffer_);
+  shmctl(id_, IPC_RMID, 0);
 }
