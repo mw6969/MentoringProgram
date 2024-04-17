@@ -2,10 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "NamedMutex.h"
 #include "Tool.h"
-
-const char *name = "my_mutex_qwe1015";
 
 void Tool::reader(const std::string &fileName) {
   if (std::ifstream inFile{fileName.data(),
@@ -13,16 +10,14 @@ void Tool::reader(const std::string &fileName) {
       inFile.is_open()) {
     std::cout << "Reader has started\n";
 
-    NamedMutex namedMutex(name);
     while (inFile) {
-      std::lock_guard<NamedMutex> lock(namedMutex);
       if (auto buffer = sharedMemory_.getFreeBuffer(); buffer != nullptr) {
         inFile.read(buffer->data, 99);
         buffer->size = inFile.gcount();
+        sharedMemory_.pushToWriteQueue(buffer);
       }
     }
     inFile.close();
-
     sharedMemory_.setReaderDone(true);
 
     std::cout << "Reader has done\n";
@@ -36,23 +31,15 @@ void Tool::writer(const std::string &fileName) {
       outFile.is_open()) {
     std::cout << "Writer has started\n";
 
-    NamedMutex namedMutex(name);
     while (true) {
-      {
-        std::lock_guard<NamedMutex> lock(namedMutex);
-        if (auto buffer = sharedMemory_.getReadyForWriteBuffer();
-            buffer != nullptr) {
-          outFile.write(buffer->data, buffer->size);
-        }
+      if (auto buffer = sharedMemory_.popFromWriteQueue(); buffer != nullptr) {
+        outFile.write(buffer->data, buffer->size);
+        sharedMemory_.releaseBuffer(buffer);
       }
-
       if (sharedMemory_.attemptRelease()) {
-        shm_unlink(name);
-        sharedMemory_.destroy();
         break;
       }
     }
-
     outFile.close();
 
     std::cout << "Writer has done\n";

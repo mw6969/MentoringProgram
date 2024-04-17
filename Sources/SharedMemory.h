@@ -7,13 +7,13 @@ constexpr short BuffersCount = 5;
 constexpr short DataLength = 100;
 
 struct Data {
-  char size;
+  size_t size;
   char data[DataLength];
 };
 
 struct Buffer {
   short freeIndexes[BuffersCount];
-  short readyForWriteIndexes[BuffersCount];
+  Data *writeQueue[BuffersCount];
   Data data[BuffersCount];
   bool readerDone;
 };
@@ -22,16 +22,15 @@ public:
   SharedMemory();
   ~SharedMemory() = default;
 
-  std::string getData(const short index) const;
   Data *getFreeBuffer();
+  void pushToWriteQueue(Data *data);
+  Data *popFromWriteQueue();
   Data *getReadyForWriteBuffer();
-  bool attemptRelease() const;
+  void releaseBuffer(Data *data);
+  bool attemptRelease();
   void setReaderDone(const bool value);
-  void destroy();
 
 private:
-  void setReadyForWriteBufferIndex(const short index);
-  void setFirstFreeBufferIndex(const short index);
   bool isBufferFree() const;
   bool isReaderDone() const;
 
