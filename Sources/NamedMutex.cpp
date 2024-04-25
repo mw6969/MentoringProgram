@@ -6,9 +6,11 @@
 
 #include "NamedMutex.h"
 
-NamedMutex::NamedMutex(const char *mutexName) : mutex_(nullptr) {
+const char *NamedMutex::name_ = "my_mutex_qwe1104";
+
+NamedMutex::NamedMutex() : mutex_(nullptr) {
   // Create or open the shared memory region
-  shmFd_ = shm_open(mutexName, O_CREAT | O_RDWR, 0644);
+  shmFd_ = shm_open(name_, O_CREAT | O_RDWR, 0644);
   if (shmFd_ == -1) {
     std::cerr << "Failed to create/open shared memory: " << strerror(errno)
               << std::endl;
@@ -49,3 +51,5 @@ void NamedMutex::lock() {
 }
 
 void NamedMutex::unlock() { mutex_->clear(); }
+
+const char *NamedMutex::getName() { return name_; }

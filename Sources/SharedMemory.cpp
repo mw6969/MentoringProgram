@@ -4,11 +4,9 @@
 #include <mutex>
 #include <sys/shm.h>
 
-#include "NamedMutex.h"
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 1076;
-const char *name = "my_mutex_qwe1076";
+constexpr int SharedMemoryKey = 1104;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
@@ -31,6 +29,7 @@ SharedMemory::SharedMemory() {
 }
 
 Data *SharedMemory::getFreeBuffer() {
+  std::lock_guard<NamedMutex> lock(namedMutex_);
   for (size_t i = 0; i < BuffersCount; ++i) {
     if (buffer_->freeIndexes[i]) {
       buffer_->freeIndexes[i] = 0;
@@ -41,6 +40,7 @@ Data *SharedMemory::getFreeBuffer() {
 }
 
 void SharedMemory::pushToWriteQueue(Data *data) {
+  std::lock_guard<NamedMutex> lock(namedMutex_);
   assert(buffer_->writeQueue[BuffersCount - 1] == nullptr);
   memcpy(buffer_->writeQueue + 1, buffer_->writeQueue,
          (BuffersCount - 1) * sizeof(buffer_->writeQueue[0]));
@@ -48,23 +48,23 @@ void SharedMemory::pushToWriteQueue(Data *data) {
 }
 
 Data *SharedMemory::popFromWriteQueue() {
-  NamedMutex namedMutex(name);
-  std::lock_guard<NamedMutex> lock(namedMutex);
+  std::lock_guard<NamedMutex> lock(namedMutex_);
   for (int i = BuffersCount - 1; i >= 0; --i) {
     if (buffer_->writeQueue[i] != nullptr) {
-      return buffer_->writeQueue[i];
+      auto buffer = buffer_->writeQueue[i];
+      buffer_->writeQueue[i] = nullptr;
+      return buffer;
     }
   }
   return nullptr;
 }
 
 void SharedMemory::releaseBuffer(Data *data) {
+  std::lock_guard<NamedMutex> lock(namedMutex_);
   for (size_t i = 0; i < BuffersCount; ++i) {
     if (&buffer_->data[i] == data) {
       buffer_->freeIndexes[i] = 1;
-    }
-    if (buffer_->writeQueue[i] == data) {
-      buffer_->writeQueue[i] = nullptr;
+      break;
     }
   }
 }
@@ -84,7 +84,7 @@ bool SharedMemory::isBufferFree() const {
 
 bool SharedMemory::attemptRelease() {
   if (isReaderDone() && isBufferFree()) {
-    shm_unlink(name);
+    shm_unlink(NamedMutex::getName());
     shmdt(buffer_);
     shmctl(id_, IPC_RMID, 0);
     return true;

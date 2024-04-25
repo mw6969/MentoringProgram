@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "NamedMutex.h"
+
 constexpr short BuffersCount = 5;
 constexpr short DataLength = 100;
 
@@ -35,6 +37,7 @@ private:
   bool isReaderDone() const;
 
 private:
+  NamedMutex namedMutex_;
   Buffer *buffer_;
   int id_;
 };
