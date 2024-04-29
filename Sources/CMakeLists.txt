@@ -2,12 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 
 set(THIS Sources)
 
-set(HEADERS
-    Tool.h
-)
-
 set(SOURCES
+    NamedMutex.cpp
+    SharedMemory.cpp
     Tool.cpp
 )
 
-add_library(${THIS} STATIC ${HEADERS} ${SOURCES})
+add_library(${THIS} STATIC ${SOURCES})

@@ -1,20 +1,23 @@
-#include <string>
 #include <iostream>
+#include <unistd.h>
 
 #include "Tool.h"
 
-int main(int argc, char *argv[])
-{
-    std::string inputFile;
-    std::cout << "Input file path:";
-    std::getline(std::cin, inputFile);
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    std::cerr << "Format: <source> <destination>\n";
+    return -1;
+  }
 
-    std::string outputFile;
-    std::cout << "Output file path:";
-    std::getline(std::cin, outputFile);
+  Tool tool;
+  if (pid_t pid{fork()}; pid == -1) {
+    std::cerr << "Fork error\n";
+    return -1;
+  } else if (pid > 0) {
+    tool.reader(argv[1]);
+  } else {
+    tool.writer(argv[2]);
+  }
 
-    Tool tool;
-    tool.copy(inputFile, outputFile);
-
-    return 0;
+  return 0;
 }
