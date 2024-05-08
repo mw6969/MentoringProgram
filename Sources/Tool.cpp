@@ -1,14 +1,15 @@
 
 #include <fstream>
-#include <iostream>
 
+#include "CustomException.h"
+#include "Logger.h"
 #include "Tool.h"
 
 void Tool::reader(const std::string &fileName) {
   if (std::ifstream inFile{fileName.data(),
                            std::ios_base::in | std::ios_base::binary};
       inFile.is_open()) {
-    std::cout << "Reader has started\n";
+    Logger log("Reader has started");
 
     while (inFile) {
       if (auto buffer = sharedMemory_.getFreeBuffer(); buffer != nullptr) {
@@ -20,16 +21,16 @@ void Tool::reader(const std::string &fileName) {
     inFile.close();
     sharedMemory_.setReaderDone(true);
 
-    std::cout << "Reader has done\n";
+    Logger log2("Reader has done");
   } else {
-    std::cout << "Error opening input file\n";
+    throw CustomException("Failed to open input file");
   }
 }
 
 void Tool::writer(const std::string &fileName) {
   if (std::ofstream outFile{fileName.data(), std::ios_base::binary};
       outFile.is_open()) {
-    std::cout << "Writer has started\n";
+    Logger log("Writer has started");
 
     while (true) {
       if (auto buffer = sharedMemory_.popFromWriteQueue(); buffer != nullptr) {
@@ -42,8 +43,8 @@ void Tool::writer(const std::string &fileName) {
     }
     outFile.close();
 
-    std::cout << "Writer has done\n";
+    Logger log2("Writer has done");
   } else {
-    std::cout << "Error opening output file\n";
+    throw CustomException("Failed to open output file");
   }
 }

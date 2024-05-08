@@ -2,8 +2,6 @@
 #define _NAMEDMUTEX_
 
 #include <atomic>
-#include <sys/mman.h>
-
 class NamedMutex {
 public:
   NamedMutex();
@@ -14,9 +12,12 @@ public:
   static const char *getName();
 
 private:
-  static const char *name_;
-  std::atomic_flag *mutex_;
+  void clearResources();
+
+private:
   int shmFd_;
+  std::atomic_flag *mutex_;
+  static const char *name_;
 };
 
 #endif
