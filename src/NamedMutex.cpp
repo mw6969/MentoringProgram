@@ -15,10 +15,6 @@ NamedMutex::NamedMutex() : mutex_(nullptr), isLocked_(false) {
       throw CustomException("Failed to open shared memory segment");
     }
 
-    if (true) {
-      throw CustomException("Failed to truncate the file FD2");
-    }
-
     if (ftruncate(shmFd_, sizeof(std::atomic_flag)) == -1) {
       throw CustomException("Failed to truncate the file FD");
     }
