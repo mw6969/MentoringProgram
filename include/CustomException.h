@@ -10,7 +10,6 @@ public:
   CustomException(T &&message) : message_(std::forward<T>(message)) {}
 
   const char *what() const noexcept override;
-  static void handler();
 
 private:
   std::string message_;

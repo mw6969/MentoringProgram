@@ -1,22 +1,24 @@
-#include <chrono>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-
 #include "Logger.h"
+#include "CustomException.h"
+#include <chrono>
+#include <iomanip>
 
 constexpr std::string fileName("log.txt");
 
-Logger::Logger(const std::string &&message) {
-  std::ofstream outFile(fileName, std::ios_base::app);
-  if (!outFile.is_open()) {
-    std::cerr << "Logger is not open\n";
-    return;
+Logger::Logger() : logFile_(fileName, std::ios_base::app) {
+  if (!logFile_) {
+    throw CustomException("Unable to open log file");
   }
+}
+
+Logger &Logger::getInstance() {
+  static Logger instance;
+  return instance;
+}
+
+std::ofstream &Logger::getStream() {
   auto now =
       std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  outFile << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") << " "
-          << message << "\n";
-
-  outFile.close();
+  logFile_ << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") << " ";
+  return logFile_;
 }

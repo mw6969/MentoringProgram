@@ -6,7 +6,7 @@
 #include "CustomException.h"
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 1104;
+constexpr int SharedMemoryKey = 1107;
 
 SharedMemory::SharedMemory() {
   try {

@@ -10,8 +10,8 @@ public:
   Tool() = default;
   ~Tool() = default;
 
-  void reader(const std::string &fileName);
-  void writer(const std::string &fileName);
+  void reader(const std::string &inputFile);
+  void writer(const std::string &outputFile);
 
 private:
   SharedMemory sharedMemory_;

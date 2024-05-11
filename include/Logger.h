@@ -1,12 +1,22 @@
 #ifndef _LOGGER_
 #define _LOGGER_
 
-#include <string>
+#include <fstream>
 
 class Logger {
 public:
-  Logger(const std::string &&message);
+  Logger(Logger const &) = delete;
+  void operator=(Logger const &) = delete;
+
+  static Logger &getInstance();
+  std::ofstream &getStream();
+
+private:
+  Logger();
   ~Logger() = default;
+
+private:
+  std::ofstream logFile_;
 };
 
 #endif

@@ -16,7 +16,8 @@ private:
 
 private:
   int shmFd_;
-  std::atomic_flag *mutex_;
+  std::atomic<bool> *mutex_;
+  bool isLocked_;
   static const char *name_;
 };
 

@@ -5,12 +5,11 @@
 #include "Logger.h"
 #include "Tool.h"
 
-void Tool::reader(const std::string &fileName) {
-  if (std::ifstream inFile{fileName.data(),
+void Tool::reader(const std::string &inputFile) {
+  if (std::ifstream inFile{inputFile.data(),
                            std::ios_base::in | std::ios_base::binary};
       inFile.is_open()) {
-    Logger log("Reader has started");
-
+    Logger::getInstance().getStream() << "Reader has started\n";
     while (inFile) {
       if (auto buffer = sharedMemory_.getFreeBuffer(); buffer != nullptr) {
         inFile.read(buffer->data, 99);
@@ -20,18 +19,16 @@ void Tool::reader(const std::string &fileName) {
     }
     inFile.close();
     sharedMemory_.setReaderDone(true);
-
-    Logger log2("Reader has done");
+    Logger::getInstance().getStream() << "Reader has done\n";
   } else {
     throw CustomException("Failed to open input file");
   }
 }
 
-void Tool::writer(const std::string &fileName) {
-  if (std::ofstream outFile{fileName.data(), std::ios_base::binary};
+void Tool::writer(const std::string &outputFile) {
+  if (std::ofstream outFile{outputFile.data(), std::ios_base::binary};
       outFile.is_open()) {
-    Logger log("Writer has started");
-
+    Logger::getInstance().getStream() << "Writer has started\n";
     while (true) {
       if (auto buffer = sharedMemory_.popFromWriteQueue(); buffer != nullptr) {
         outFile.write(buffer->data, buffer->size);
@@ -42,8 +39,7 @@ void Tool::writer(const std::string &fileName) {
       }
     }
     outFile.close();
-
-    Logger log2("Writer has done");
+    Logger::getInstance().getStream() << "Writer has done\n";
   } else {
     throw CustomException("Failed to open output file");
   }

@@ -6,24 +6,30 @@
 #include "CustomException.h"
 #include "NamedMutex.h"
 
-const char *NamedMutex::name_ = "my_mutex_qwe1104";
+const char *NamedMutex::name_ = "my_mutex_qwe1107";
 
-NamedMutex::NamedMutex() : mutex_(nullptr) {
+NamedMutex::NamedMutex() : mutex_(nullptr), isLocked_(false) {
   try {
     shmFd_ = shm_open(name_, O_CREAT | O_RDWR, 0644);
     if (shmFd_ == -1) {
       throw CustomException("Failed to open shared memory segment");
     }
 
+    if (true) {
+      throw CustomException("Failed to truncate the file FD2");
+    }
+
     if (ftruncate(shmFd_, sizeof(std::atomic_flag)) == -1) {
       throw CustomException("Failed to truncate the file FD");
     }
 
-    mutex_ = reinterpret_cast<std::atomic_flag *>(
-        mmap(NULL, sizeof(std::atomic_flag), PROT_READ | PROT_WRITE, MAP_SHARED,
-             shmFd_, 0));
+    mutex_ = reinterpret_cast<std::atomic<bool> *>(
+        mmap(NULL, sizeof(std::atomic<bool>), PROT_READ | PROT_WRITE,
+             MAP_SHARED, shmFd_, 0));
     if (mutex_ == MAP_FAILED) {
       throw CustomException("Failed to map shared memory segment");
+    } else {
+      new (mutex_) std::atomic<bool>(false);
     }
   } catch (...) {
     clearResources();
@@ -36,12 +42,23 @@ NamedMutex::NamedMutex() : mutex_(nullptr) {
 NamedMutex::~NamedMutex() { clearResources(); }
 
 void NamedMutex::lock() {
-  while (mutex_->test_and_set()) {
+  while (true) {
+    bool expected = false;
+    if (mutex_->compare_exchange_weak(expected, true,
+                                      std::memory_order_acquire)) {
+      isLocked_ = true;
+      break;
+    }
     std::this_thread::yield();
   }
 }
 
-void NamedMutex::unlock() { mutex_->clear(); }
+void NamedMutex::unlock() {
+  if (isLocked_) {
+    mutex_->store(false, std::memory_order_release);
+    isLocked_ = false;
+  }
+}
 
 const char *NamedMutex::getName() { return name_; }
 
