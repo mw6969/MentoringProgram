@@ -20,7 +20,7 @@ struct Buffer {
 class SharedMemory {
 public:
   SharedMemory();
-  ~SharedMemory() = default;
+  ~SharedMemory();
 
   Data *getFreeBuffer();
   void pushToWriteQueue(Data *data);

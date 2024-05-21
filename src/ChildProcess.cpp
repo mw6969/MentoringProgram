@@ -1,7 +1,16 @@
-#include "ChildProcess.h"
-#include "Tool.h"
+#include <cstdlib>
+#include <signal.h>
+#include <sys/prctl.h>
 
-ChildProcess::ChildProcess(const std::string &outputFile) {
-  Tool tool;
-  tool.writer(outputFile);
+#include "ChildProcess.h"
+
+ChildProcess::ChildProcess() {
+  prctl(PR_SET_PDEATHSIG, SIGTERM);
+  signal(SIGTERM, ChildProcess::handleParentSignal);
+}
+
+void ChildProcess::handleParentSignal(int signal) {
+  if (signal == SIGTERM) {
+    std::exit(EXIT_FAILURE);
+  }
 }

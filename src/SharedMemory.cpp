@@ -32,6 +32,8 @@ SharedMemory::SharedMemory() {
   }
 }
 
+SharedMemory::~SharedMemory() { clearResources(); }
+
 Data *SharedMemory::getFreeBuffer() {
   std::lock_guard<NamedMutex> lock(namedMutex_);
   for (size_t i = 0; i < BuffersCount; ++i) {

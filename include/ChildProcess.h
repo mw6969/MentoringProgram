@@ -1,11 +1,12 @@
 #ifndef _CHILDPROCESS_
 #define _CHILDPROCESS_
 
-#include <string>
-
 class ChildProcess {
 public:
-  ChildProcess(const std::string &outputFile);
+  ChildProcess();
+
+private:
+  static void handleParentSignal(int signal);
 };
 
 #endif

@@ -2,6 +2,7 @@
 #define _LOGGER_
 
 #include <fstream>
+#include <string>
 
 class Logger {
 public:
@@ -9,7 +10,7 @@ public:
   void operator=(Logger const &) = delete;
 
   static Logger &getInstance();
-  std::ofstream &getStream();
+  void log(const std::string &message);
 
 private:
   Logger();

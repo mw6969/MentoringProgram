@@ -16,9 +16,9 @@ Logger &Logger::getInstance() {
   return instance;
 }
 
-std::ofstream &Logger::getStream() {
+void Logger::log(const std::string &message) {
   auto now =
       std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  logFile_ << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") << " ";
-  return logFile_;
+  logFile_ << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") << " "
+           << message << "\n";
 }
