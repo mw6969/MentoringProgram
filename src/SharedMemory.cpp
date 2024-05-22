@@ -6,7 +6,7 @@
 #include "CustomException.h"
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 1107;
+constexpr int SharedMemoryKey = 123;
 
 SharedMemory::SharedMemory() {
   try {
@@ -88,15 +88,6 @@ bool SharedMemory::isBufferFree() const {
   return true;
 }
 
-bool SharedMemory::attemptRelease() {
-  if (isReaderDone() && isBufferFree()) {
-    clearResources();
-    return true;
-  }
-  return false;
-}
+bool SharedMemory::attemptRelease() { return isReaderDone() && isBufferFree(); }
 
-void SharedMemory::clearResources() {
-  shm_unlink(NamedMutex::getName());
-  shmctl(id_, IPC_RMID, 0);
-}
+void SharedMemory::clearResources() { shmctl(id_, IPC_RMID, 0); }

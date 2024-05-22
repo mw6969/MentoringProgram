@@ -2,6 +2,8 @@
 #define _NAMEDMUTEX_
 
 #include <atomic>
+#include <sys/mman.h>
+
 class NamedMutex {
 public:
   NamedMutex();
@@ -9,16 +11,13 @@ public:
 
   void lock();
   void unlock();
-  static const char *getName();
 
 private:
   void clearResources();
 
 private:
+  std::atomic_flag *mutex_;
   int shmFd_;
-  std::atomic<bool> *mutex_;
-  bool isLocked_;
-  static const char *name_;
 };
 
 #endif
