@@ -9,27 +9,22 @@
 constexpr int SharedMemoryKey = 123;
 
 SharedMemory::SharedMemory() {
-  try {
-    if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
-        id_ < 0) {
-      throw CustomException("Failed to get shared memory segment");
-    }
-
-    if (buffer_ = (Buffer *)shmat(id_, nullptr, 0); buffer_ == (Buffer *)(-1)) {
-      throw CustomException("Failed to attach shared memory segment");
-    }
-
-    for (size_t i = 0; i < BuffersCount; ++i) {
-      buffer_->freeIndexes[i] = 1;
-      buffer_->writeQueue[i] = nullptr;
-    }
-    buffer_->readerDone = false;
-  } catch (...) {
+  if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
+      id_ < 0) {
     clearResources();
-    if (auto eptr = std::current_exception(); eptr) {
-      std::rethrow_exception(eptr);
-    }
+    throw CustomException("Failed to get shared memory segment");
   }
+
+  if (buffer_ = (Buffer *)shmat(id_, nullptr, 0); buffer_ == (Buffer *)(-1)) {
+    clearResources();
+    throw CustomException("Failed to attach shared memory segment");
+  }
+
+  for (size_t i = 0; i < BuffersCount; ++i) {
+    buffer_->freeIndexes[i] = 1;
+    buffer_->writeQueue[i] = nullptr;
+  }
+  buffer_->readerDone = false;
 }
 
 SharedMemory::~SharedMemory() { clearResources(); }

@@ -11,26 +11,22 @@
 Application::Application(const std::string &inputFile,
                          const std::string &outputFile) {
 
+  Logger &logger = Logger::getInstance();
   try {
-    Logger &logger = Logger::getInstance();
-    try {
-      if (pid_t pid = fork(); pid == -1) {
-        throw CustomException("Failed to fork");
-      } else if (pid > 0) {
-        ParentProcess parent;
-        Tool tool(logger);
-        tool.reader(inputFile);
-      } else {
-        ChildProcess child;
-        Tool tool(logger);
-        tool.writer(outputFile);
-      }
-    } catch (const CustomException &e) {
-      logger.log(e.what());
-    } catch (...) {
-      logger.log("Caught an unknown exception\n");
+    if (pid_t pid = fork(); pid == -1) {
+      throw CustomException("Failed to fork");
+    } else if (pid > 0) {
+      ParentProcess parent;
+      Tool tool(logger);
+      tool.reader(inputFile);
+    } else {
+      ChildProcess child;
+      Tool tool(logger);
+      tool.writer(outputFile);
     }
   } catch (const CustomException &e) {
-    std::cerr << e.what() << "\n";
+    logger.log(e.what());
+  } catch (...) {
+    logger.log("Caught an unknown exception\n");
   }
 }
