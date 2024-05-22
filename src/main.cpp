@@ -1,3 +1,6 @@
+#include <iostream>
+#include <memory>
+
 #include "Application.h"
 #include "CustomException.h"
 
@@ -8,7 +11,18 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  Application app(argv[1], argv[2]);
+  static std::unique_ptr<Application> app;
+  std::set_terminate([]() {
+    app.reset();
+    std::cerr << "Unhandled exception\n";
+    std::abort();
+  });
+
+  try {
+    app = std::make_unique<Application>(argv[1], argv[2]);
+  } catch (const CustomException &ex) {
+    std::cerr << ex.what() << "\n";
+  }
 
   return EXIT_SUCCESS;
 }

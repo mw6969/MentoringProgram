@@ -10,7 +10,6 @@
 
 Application::Application(const std::string &inputFile,
                          const std::string &outputFile) {
-
   Logger &logger = Logger::getInstance();
   try {
     if (pid_t pid = fork(); pid == -1) {
