@@ -11,10 +11,11 @@ public:
 
   void lock();
   void unlock();
-  static const char *getName();
 
 private:
-  static const char *name_;
+  void clearResources();
+
+private:
   std::atomic_flag *mutex_;
   int shmFd_;
 };

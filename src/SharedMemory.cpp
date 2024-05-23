@@ -1,24 +1,23 @@
 #include <assert.h>
 #include <cstring>
-#include <iostream>
-#include <mutex>
+#include <sys/mman.h>
 #include <sys/shm.h>
 
+#include "CustomException.h"
 #include "SharedMemory.h"
 
-constexpr int SharedMemoryKey = 1104;
+constexpr int SharedMemoryKey = 123;
 
 SharedMemory::SharedMemory() {
   if (id_ = shmget(SharedMemoryKey, sizeof(Buffer), IPC_CREAT | 0666);
       id_ < 0) {
-    std::cerr << "Error getting shared memory segment of 'Collection' class\n";
-    return;
+    clearResources();
+    throw CustomException("Failed to get shared memory segment");
   }
 
   if (buffer_ = (Buffer *)shmat(id_, nullptr, 0); buffer_ == (Buffer *)(-1)) {
-    std::cerr
-        << "Error attaching shared memory segment of 'Collection' class\n";
-    return;
+    clearResources();
+    throw CustomException("Failed to attach shared memory segment");
   }
 
   for (size_t i = 0; i < BuffersCount; ++i) {
@@ -27,6 +26,8 @@ SharedMemory::SharedMemory() {
   }
   buffer_->readerDone = false;
 }
+
+SharedMemory::~SharedMemory() { clearResources(); }
 
 Data *SharedMemory::getFreeBuffer() {
   std::lock_guard<NamedMutex> lock(namedMutex_);
@@ -82,12 +83,6 @@ bool SharedMemory::isBufferFree() const {
   return true;
 }
 
-bool SharedMemory::attemptRelease() {
-  if (isReaderDone() && isBufferFree()) {
-    shm_unlink(NamedMutex::getName());
-    shmdt(buffer_);
-    shmctl(id_, IPC_RMID, 0);
-    return true;
-  }
-  return false;
-}
+bool SharedMemory::attemptRelease() { return isReaderDone() && isBufferFree(); }
+
+void SharedMemory::clearResources() { shmctl(id_, IPC_RMID, 0); }

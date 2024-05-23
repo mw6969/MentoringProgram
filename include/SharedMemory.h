@@ -1,8 +1,6 @@
 #ifndef _SHAREDMEMORY_
 #define _SHAREDMEMORY_
 
-#include <string>
-
 #include "NamedMutex.h"
 
 constexpr short BuffersCount = 5;
@@ -22,12 +20,11 @@ struct Buffer {
 class SharedMemory {
 public:
   SharedMemory();
-  ~SharedMemory() = default;
+  ~SharedMemory();
 
   Data *getFreeBuffer();
   void pushToWriteQueue(Data *data);
   Data *popFromWriteQueue();
-  Data *getReadyForWriteBuffer();
   void releaseBuffer(Data *data);
   bool attemptRelease();
   void setReaderDone(const bool value);
@@ -35,11 +32,12 @@ public:
 private:
   bool isBufferFree() const;
   bool isReaderDone() const;
+  void clearResources();
 
 private:
   NamedMutex namedMutex_;
-  Buffer *buffer_;
   int id_;
+  Buffer *buffer_;
 };
 
 #endif
