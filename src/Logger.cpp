@@ -1,8 +1,9 @@
-#include "Logger.h"
-
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+
+#include "CustomException.h"
+#include "Logger.h"
 
 constexpr std::string fileName("log.txt");
 

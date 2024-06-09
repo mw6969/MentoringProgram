@@ -1,38 +1,31 @@
+#include <iostream>
+#include <unistd.h>
+
 #include "Application.h"
-#include "Client.h"
+#include "ChildProcess.h"
+#include "CustomException.h"
 #include "Logger.h"
-#include "Server.h"
+#include "ParentProcess.h"
+#include "Tool.h"
 
-#include <boost/asio/io_service.hpp>
-
-constexpr std::string host("localhost");
-constexpr unsigned short port(9999);
-
-Application::Application(int argc, char *argv[])
-    : mode_(argc > 1 ? argv[1] : "") {
-  for (int i = 2; i < argc; ++i) {
-    fileNames_.push_back(argv[i]);
-  }
-}
-
-void Application::run() {
+Application::Application(const std::string &inputFile,
+                         const std::string &outputFile) {
   Logger &logger = Logger::getInstance();
-  boost::asio::io_service ioService;
   try {
-    if (mode_ == "server") {
-      Server server(ioService, port);
-      ioService.run();
-    } else if (mode_ == "client") {
-      if (fileNames_.empty()) {
-        logger.log("You must provide at least one filename for client mode");
-      }
-      Client client(ioService, host, port);
-      client.sendFiles(std::move(fileNames_));
-      logger.log("Files sent");
+    if (pid_t pid = fork(); pid == -1) {
+      throw CustomException("Failed to fork");
+    } else if (pid > 0) {
+      ParentProcess parent;
+      Tool tool(logger);
+      tool.reader(inputFile);
     } else {
-      logger.log("Invalid mode. Use server or client");
+      ChildProcess child;
+      Tool tool(logger);
+      tool.writer(outputFile);
     }
-  } catch (const std::exception &e) {
+  } catch (const CustomException &e) {
     logger.log(e.what());
+  } catch (...) {
+    logger.log("Caught an unknown exception\n");
   }
 }
