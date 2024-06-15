@@ -17,14 +17,14 @@ public:
 private:
   void readFileNameLength();
   void readFileName();
-  void readFileNameSize();
+  void readFileSize();
   void readFileContent();
 
 private:
   tcp::socket socket_;
   char data_[Utils::BufferSize];
   uint32_t nameLength_;
-  std::streamsize fileSize_;
+  std::streamsize leftToRead_;
   std::string fileName_;
   std::ofstream outputFile_;
 };
