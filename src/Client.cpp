@@ -1,3 +1,4 @@
+
 #include "Client.h"
 #include "Utils.h"
 
@@ -6,7 +7,8 @@
 Client::Client(boost::asio::io_service &ioService, const std::string &host,
                const unsigned short port)
     : socket_(ioService), endpointIterator_(tcp::resolver(ioService).resolve(
-                              {host, std::to_string(port)})) {
+                              {host, std::to_string(port)})),
+      cryptor_(std::make_unique<Cryptor>()) {
   connect();
 }
 
@@ -49,7 +51,10 @@ void Client::sendFile(const std::string &fileName) {
   while (inputFile) {
     inputFile.read(buf, sizeof(buf));
     if (const std::streamsize length = inputFile.gcount(); length > 0) {
-      boost::asio::write(socket_, boost::asio::buffer(buf, length));
+      CryptoPP::byte encryptedBuf[sizeof(buf)];
+      cryptor_->getEncryptor()->ProcessData(
+          encryptedBuf, reinterpret_cast<CryptoPP::byte *>(buf), length);
+      boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
     }
   }
 }

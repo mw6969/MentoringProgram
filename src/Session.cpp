@@ -1,6 +1,8 @@
 #include "Session.h"
+#include "Cryptor.h"
 
-Session::Session(tcp::socket socket) : socket_(std::move(socket)) {}
+Session::Session(tcp::socket socket)
+    : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
 
 void Session::start() { readFileNameLength(); }
 
@@ -48,7 +50,11 @@ void Session::readFileContent() {
       [this, self = shared_from_this()](boost::system::error_code ec,
                                         std::size_t length) {
         if (!ec && outputFile_) {
-          outputFile_.write(data_, length);
+          CryptoPP::byte decryptedBuf[sizeof(data_)];
+          cryptor_->getDecryptor()->ProcessData(
+              decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
+          outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
+                            length);
           leftToRead_ -= length;
           if (leftToRead_ > 0) {
             readFileContent();

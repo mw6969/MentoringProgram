@@ -1,6 +1,7 @@
 #ifndef _SESSION_
 #define _SESSION_
 
+#include "Cryptor.h"
 #include "Utils.h"
 
 #include <boost/asio.hpp>
@@ -27,6 +28,7 @@ private:
   std::streamsize leftToRead_;
   std::string fileName_;
   std::ofstream outputFile_;
+  std::unique_ptr<Cryptor> cryptor_;
 };
 
 #endif
