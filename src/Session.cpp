@@ -1,9 +1,8 @@
 #include "Session.h"
 #include "Cryptor.h"
 
-Session::Session(tcp::socket socket, const std::shared_ptr<Cryptor> &cryptor)
-    : socket_(std::move(socket)), cryptor_(cryptor),
-      cryptor2_(std::make_unique<Cryptor>()) {}
+Session::Session(tcp::socket socket)
+    : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
 
 void Session::start() { readFileNameLength(); }
 
@@ -52,7 +51,7 @@ void Session::readFileContent() {
                                         std::size_t length) {
         if (!ec && outputFile_) {
           CryptoPP::byte decryptedBuf[sizeof(data_)];
-          cryptor2_->getDecryptor()->ProcessData(
+          cryptor_->getDecryptor()->ProcessData(
               decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
           outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
                             length);
@@ -62,7 +61,6 @@ void Session::readFileContent() {
           } else {
             // Close file and get ready to read the next header
             outputFile_.close();
-            cryptor2_->clear();
             readFileNameLength();
           }
         }

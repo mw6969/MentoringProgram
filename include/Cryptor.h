@@ -12,11 +12,6 @@ public:
   CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption *getEncryptor();
   CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption *getDecryptor();
 
-  void clear();
-
-private:
-  void init();
-
 private:
   CryptoPP::byte key_[CryptoPP::AES::DEFAULT_KEYLENGTH];
   CryptoPP::byte iv_[CryptoPP::AES::BLOCKSIZE];

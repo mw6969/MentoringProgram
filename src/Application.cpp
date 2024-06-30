@@ -1,6 +1,5 @@
 #include "Application.h"
 #include "Client.h"
-#include "Cryptor.h"
 #include "Logger.h"
 #include "Server.h"
 
@@ -17,18 +16,17 @@ Application::Application(int argc, char *argv[])
 }
 
 void Application::run() {
-  auto cryptor = std::make_shared<Cryptor>();
   Logger &logger = Logger::getInstance();
   boost::asio::io_service ioService;
   try {
     if (mode_ == "server") {
-      Server server(ioService, port, cryptor);
+      Server server(ioService, port);
       ioService.run();
     } else if (mode_ == "client") {
       if (fileNames_.empty()) {
         logger.log("You must provide at least one filename for client mode");
       }
-      Client client(ioService, host, port, cryptor);
+      Client client(ioService, host, port);
       client.sendFiles(std::move(fileNames_));
       logger.log("Files sent");
     } else {
