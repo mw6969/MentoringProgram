@@ -1,6 +1,7 @@
 #ifndef _SESSION_
 #define _SESSION_
 
+#include "Cryptor.h"
 #include "Utils.h"
 
 #include <boost/asio.hpp>
@@ -10,7 +11,7 @@ using boost::asio::ip::tcp;
 
 class Session : public std::enable_shared_from_this<Session> {
 public:
-  Session(tcp::socket socket);
+  Session(tcp::socket socket, const std::shared_ptr<Cryptor> &cryptor);
 
   void start();
 
@@ -27,6 +28,8 @@ private:
   std::streamsize leftToRead_;
   std::string fileName_;
   std::ofstream outputFile_;
+  std::shared_ptr<Cryptor> cryptor_;
+  std::unique_ptr<Cryptor> cryptor2_;
 };
 
 #endif
