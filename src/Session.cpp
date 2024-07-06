@@ -59,10 +59,43 @@ void Session::readFileContent() {
           if (leftToRead_ > 0) {
             readFileContent();
           } else {
-            // Close file and get ready to read the next header
             outputFile_.close();
-            readFileNameLength();
+            readFileHashSize();
           }
+        }
+      });
+}
+
+void Session::readFileHashSize() {
+  boost::asio::async_read(
+      socket_,
+      boost::asio::buffer(&receivedHashSize_, sizeof(receivedHashSize_)),
+      [this, self = shared_from_this()](boost::system::error_code ec,
+                                        std::size_t /*length*/) {
+        if (!ec) {
+          receivedHashSize_ = ntohl(receivedHashSize_);
+          readFileHash();
+        }
+      });
+}
+
+void Session::readFileHash() {
+  receivedHash_.resize(receivedHashSize_);
+  boost::asio::async_read(
+      socket_, boost::asio::buffer(receivedHash_),
+      [this, self = shared_from_this()](boost::system::error_code ec,
+                                        std::size_t /*length*/) {
+        if (!ec) {
+          receivedHash_[receivedHash_.size()] = '\0';
+
+          // Check file integrity
+          const auto test = Cryptor::getSha256Hash(fileName_);
+          if (receivedHash_ != test) {
+            throw std::runtime_error("Failed to transmission file:  " +
+                                     fileName_);
+          }
+
+          readFileNameLength();
         }
       });
 }

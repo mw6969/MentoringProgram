@@ -11,6 +11,7 @@ public:
 
   CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption *getEncryptor();
   CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption *getDecryptor();
+  static std::string getSha256Hash(const std::string &fileName);
 
 private:
   CryptoPP::byte key_[CryptoPP::AES::DEFAULT_KEYLENGTH];

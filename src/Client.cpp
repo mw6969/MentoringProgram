@@ -57,4 +57,13 @@ void Client::sendFile(const std::string &fileName) {
       boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
     }
   }
+
+  const std::string hash = Cryptor::getSha256Hash(fileName);
+
+  // Send size of file hash
+  const uint32_t hashSize = htonl(hash.size());
+  boost::asio::write(socket_, boost::asio::buffer(&hashSize, sizeof(hashSize)));
+
+  // Send file hash
+  boost::asio::write(socket_, boost::asio::buffer(hash));
 }

@@ -20,12 +20,16 @@ private:
   void readFileName();
   void readFileSize();
   void readFileContent();
+  void readFileHashSize();
+  void readFileHash();
 
 private:
   tcp::socket socket_;
   char data_[Utils::BufferSize];
+  uint32_t receivedHashSize_;
   uint32_t nameLength_;
   std::streamsize leftToRead_;
+  std::string receivedHash_;
   std::string fileName_;
   std::ofstream outputFile_;
   std::unique_ptr<Cryptor> cryptor_;
