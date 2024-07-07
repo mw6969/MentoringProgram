@@ -16,6 +16,7 @@ public:
   void start();
 
 private:
+  void readPublicKey();
   void readFileNameLength();
   void readFileName();
   void readFileSize();
@@ -33,6 +34,7 @@ private:
   std::string fileName_;
   std::ofstream outputFile_;
   std::unique_ptr<Cryptor> cryptor_;
+  CryptoPP::byte publicKey_[CryptoPP::AES::DEFAULT_KEYLENGTH];
 };
 
 #endif

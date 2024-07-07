@@ -4,7 +4,18 @@
 Session::Session(tcp::socket socket)
     : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
 
-void Session::start() { readFileNameLength(); }
+void Session::start() { readPublicKey(); }
+
+void Session::readPublicKey() {
+  boost::asio::async_read(
+      socket_, boost::asio::buffer(publicKey_),
+      [this, self = shared_from_this()](boost::system::error_code ec,
+                                        std::size_t /*length*/) {
+        if (!ec) {
+          readFileNameLength();
+        }
+      });
+}
 
 void Session::readFileNameLength() {
   boost::asio::async_read(
@@ -51,8 +62,9 @@ void Session::readFileContent() {
                                         std::size_t length) {
         if (!ec && outputFile_) {
           CryptoPP::byte decryptedBuf[sizeof(data_)];
-          cryptor_->getDecryptor()->ProcessData(
-              decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
+          cryptor_->getDecryptor(publicKey_)
+              ->ProcessData(decryptedBuf,
+                            reinterpret_cast<CryptoPP::byte *>(data_), length);
           outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
                             length);
           leftToRead_ -= length;
@@ -95,7 +107,7 @@ void Session::readFileHash() {
                                      fileName_);
           }
 
-          readFileNameLength();
+          readPublicKey();
         }
       });
 }

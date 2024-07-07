@@ -31,6 +31,13 @@ void Client::sendFile(const std::string &fileName) {
   if (!inputFile) {
     throw std::runtime_error("Failed to open file: " + fileName);
   }
+
+  // Send public key
+  CryptoPP::byte publicKey[CryptoPP::AES::DEFAULT_KEYLENGTH];
+  cryptor_->generateKey(publicKey);
+  boost::asio::write(socket_, boost::asio::buffer(
+                                  publicKey, CryptoPP::AES::DEFAULT_KEYLENGTH));
+
   inputFile.seekg(0, std::ios::end);
   const std::streamsize size = inputFile.tellg();
   inputFile.seekg(0, std::ios::beg);
@@ -52,7 +59,7 @@ void Client::sendFile(const std::string &fileName) {
     inputFile.read(buf, sizeof(buf));
     if (const std::streamsize length = inputFile.gcount(); length > 0) {
       CryptoPP::byte encryptedBuf[sizeof(buf)];
-      cryptor_->getEncryptor()->ProcessData(
+      cryptor_->getEncryptor(publicKey)->ProcessData(
           encryptedBuf, reinterpret_cast<CryptoPP::byte *>(buf), length);
       boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
     }
