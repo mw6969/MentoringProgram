@@ -4,8 +4,9 @@
 #include "Cryptor.h"
 #include "Utils.h"
 
-#include <boost/asio.hpp>
 #include <fstream>
+
+#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -16,7 +17,6 @@ public:
   void start();
 
 private:
-  void readPublicKey();
   void readFileNameLength();
   void readFileName();
   void readFileSize();
@@ -31,10 +31,10 @@ private:
   uint32_t nameLength_;
   std::streamsize leftToRead_;
   std::string receivedHash_;
-  std::string fileName_;
+  std::string originFileName_;
+  std::string uniqueFileName_;
   std::ofstream outputFile_;
   std::unique_ptr<Cryptor> cryptor_;
-  CryptoPP::byte publicKey_[CryptoPP::AES::DEFAULT_KEYLENGTH];
 };
 
 #endif

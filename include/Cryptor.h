@@ -9,12 +9,12 @@ class Cryptor {
 public:
   Cryptor() = default;
 
-  void generateKey(CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH]);
-  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption *
-  getEncryptor(const CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH]);
-  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption *
-  getDecryptor(const CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH]);
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption *getEncryptor();
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption *getDecryptor();
   static std::string getSha256Hash(const std::string &fileName);
+
+private:
+  std::vector<CryptoPP::byte> getKey();
 
 private:
   CryptoPP::byte iv_[CryptoPP::AES::BLOCKSIZE];

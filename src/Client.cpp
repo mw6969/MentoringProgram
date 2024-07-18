@@ -22,21 +22,15 @@ void Client::connect() {
   boost::system::error_code ec;
   boost::asio::connect(socket_, endpointIterator_, ec);
   if (ec) {
-    throw std::runtime_error("Failed to connect: " + ec.message());
+    throw std::runtime_error("Client has failed to connect: " + ec.message());
   }
 }
 
 void Client::sendFile(const std::string &fileName) {
   std::ifstream inputFile(fileName, std::ios_base::binary);
   if (!inputFile) {
-    throw std::runtime_error("Failed to open file: " + fileName);
+    throw std::runtime_error("Client has failed to open file: " + fileName);
   }
-
-  // Send public key
-  CryptoPP::byte publicKey[CryptoPP::AES::DEFAULT_KEYLENGTH];
-  cryptor_->generateKey(publicKey);
-  boost::asio::write(socket_, boost::asio::buffer(
-                                  publicKey, CryptoPP::AES::DEFAULT_KEYLENGTH));
 
   inputFile.seekg(0, std::ios::end);
   const std::streamsize size = inputFile.tellg();
@@ -55,11 +49,10 @@ void Client::sendFile(const std::string &fileName) {
 
   // Send file content
   char buf[Utils::BufferSize];
-  while (inputFile) {
-    inputFile.read(buf, sizeof(buf));
+  while (inputFile.read(buf, sizeof(buf))) {
     if (const std::streamsize length = inputFile.gcount(); length > 0) {
       CryptoPP::byte encryptedBuf[sizeof(buf)];
-      cryptor_->getEncryptor(publicKey)->ProcessData(
+      cryptor_->getEncryptor()->ProcessData(
           encryptedBuf, reinterpret_cast<CryptoPP::byte *>(buf), length);
       boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
     }
