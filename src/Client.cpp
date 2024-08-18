@@ -33,8 +33,25 @@ void Client::sendFile(const std::string &fileName) {
   }
 
   inputFile.seekg(0, std::ios::end);
-  const std::streamsize size = inputFile.tellg();
+  std::streamsize size = inputFile.tellg();
   inputFile.seekg(0, std::ios::beg);
+
+  // Process padding
+  const bool hasPadding =
+      (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE)) !=
+      CryptoPP::AES::BLOCKSIZE;
+  const std::streamsize paddingLength =
+      hasPadding
+          ? (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE))
+          : 0;
+  const uint32_t networkPaddingLength =
+      htonl(static_cast<uint32_t>(paddingLength));
+
+  // Send padding length
+  boost::asio::write(
+      socket_,
+      boost::asio::buffer(&networkPaddingLength, sizeof(networkPaddingLength)));
+  size += paddingLength;
 
   // Send length of filename
   const uint32_t nameLength = fileName.length();
@@ -49,19 +66,28 @@ void Client::sendFile(const std::string &fileName) {
 
   // Send file content
   char buf[Utils::BufferSize];
-  while (inputFile.read(buf, sizeof(buf))) {
-    if (const std::streamsize length = inputFile.gcount(); length > 0) {
-      CryptoPP::byte encryptedBuf[sizeof(buf)];
-      cryptor_->getEncryptor()->ProcessData(
-          encryptedBuf, reinterpret_cast<CryptoPP::byte *>(buf), length);
-      boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
+  while (inputFile.read(buf, sizeof(buf)) || inputFile.gcount() > 0) {
+    std::streamsize length = inputFile.gcount();
+    // Add garbage to the last block of data if file size is not a multiple of
+    // 16
+    if ((length < Utils::BufferSize) && hasPadding) {
+      const std::string garbage(paddingLength, 'a');
+
+      memcpy(buf + sizeof(buf) - paddingLength, garbage.c_str(), paddingLength);
+
+      // strcpy(buf, garbage.data());
+      length += paddingLength;
     }
+    CryptoPP::byte encryptedBuf[sizeof(buf)];
+    cryptor_->getEncryptor()->ProcessData(
+        encryptedBuf, reinterpret_cast<CryptoPP::byte *>(buf), length);
+    boost::asio::write(socket_, boost::asio::buffer(encryptedBuf, length));
   }
 
-  const std::string hash = Cryptor::getSha256Hash(fileName);
+  const auto hash = Cryptor::getSha256Hash(fileName);
 
   // Send size of file hash
-  const uint32_t hashSize = htonl(hash.size());
+  const uint32_t hashSize = hash.size();
   boost::asio::write(socket_, boost::asio::buffer(&hashSize, sizeof(hashSize)));
 
   // Send file hash

@@ -4,7 +4,25 @@
 Session::Session(tcp::socket socket)
     : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
 
-void Session::start() { readFileNameLength(); }
+void Session::start() {
+  paddingLength_ = 0;
+  readPaddingLength();
+}
+
+void Session::readPaddingLength() {
+  boost::asio::async_read(
+      socket_, boost::asio::buffer(&paddingLength_, sizeof(paddingLength_)),
+      [this, self = shared_from_this()](boost::system::error_code ec,
+                                        std::size_t /*length*/) {
+        if (!ec) {
+          paddingLength_ = ntohl(paddingLength_);
+          readFileNameLength();
+        } else if (ec != boost::asio::error::eof) {
+          throw std::runtime_error(
+              "Session has failed to read padding length: " + ec.message());
+        }
+      });
+}
 
 void Session::readFileNameLength() {
   boost::asio::async_read(
@@ -66,8 +84,15 @@ void Session::readFileContent() {
           CryptoPP::byte decryptedBuf[sizeof(data_)];
           cryptor_->getDecryptor()->ProcessData(
               decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
-          outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
-                            length);
+
+          // Subtract padding length if exist for the last block of data
+          if ((leftToRead_ - length <= 0) && (paddingLength_ > 0)) {
+            outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
+                              length - paddingLength_);
+          } else {
+            outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
+                              length);
+          }
           leftToRead_ -= length;
           if (leftToRead_ > 0) {
             readFileContent();
@@ -89,7 +114,6 @@ void Session::readFileHashSize() {
       [this, self = shared_from_this()](boost::system::error_code ec,
                                         std::size_t /*length*/) {
         if (!ec) {
-          receivedHashSize_ = ntohl(receivedHashSize_);
           readFileHash();
         } else if (ec != boost::asio::error::eof) {
           throw std::runtime_error(
@@ -105,16 +129,14 @@ void Session::readFileHash() {
       [this, self = shared_from_this()](boost::system::error_code ec,
                                         std::size_t /*length*/) {
         if (!ec) {
-          receivedHash_[receivedHash_.size()] = '\0';
-
           // Check file integrity
-          auto hash = Cryptor::getSha256Hash(uniqueFileName_);
+          const auto hash = Cryptor::getSha256Hash(uniqueFileName_);
           if (receivedHash_ != hash) {
             throw std::runtime_error(
                 "Session has failed to transmission file:  " + uniqueFileName_);
           }
 
-          readFileNameLength();
+          readPaddingLength();
         } else if (ec != boost::asio::error::eof) {
           throw std::runtime_error("Session has failed to read file hash: " +
                                    ec.message());

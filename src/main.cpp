@@ -6,6 +6,8 @@
 /// @brief Usage: ./app <server|client> <file1> <file2> ...
 /// Run server: ./app server
 /// Run client: ./app client input.txt bin.jpg
+/// Put key.txt file with a key of 16 characters to the same directory as
+/// executable file
 int main(int argc, char *argv[]) {
   if (argc < 1) {
     throw std::runtime_error("Invalid input args");

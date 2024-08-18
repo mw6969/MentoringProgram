@@ -47,13 +47,8 @@ std::string Cryptor::getSha256Hash(const std::string &fileName) {
   CryptoPP::SHA256 hash;
   std::string digest;
 
-  std::ifstream file(fileName.c_str(), std::ios::binary);
-  if (!file) {
-    throw std::runtime_error("Cryptor has failed to open file: " + fileName);
-  }
-
   CryptoPP::FileSource f(
-      file, true,
+      fileName.c_str(), true,
       new CryptoPP ::HashFilter(
           hash, new CryptoPP ::HexEncoder(new CryptoPP ::StringSink(digest))));
 

@@ -17,6 +17,7 @@ public:
   void start();
 
 private:
+  void readPaddingLength();
   void readFileNameLength();
   void readFileName();
   void readFileSize();
@@ -29,6 +30,7 @@ private:
   char data_[Utils::BufferSize];
   uint32_t receivedHashSize_;
   uint32_t nameLength_;
+  uint32_t paddingLength_;
   std::streamsize leftToRead_;
   std::string receivedHash_;
   std::string originFileName_;
