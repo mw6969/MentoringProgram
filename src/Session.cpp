@@ -1,6 +1,8 @@
 #include "Session.h"
 #include "Cryptor.h"
 
+#include <cassert>
+
 Session::Session(tcp::socket socket)
     : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
 
@@ -85,14 +87,11 @@ void Session::readFileContent() {
           cryptor_->getDecryptor()->ProcessData(
               decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
 
-          // Subtract padding length if exist for the last block of data
-          if ((leftToRead_ - length <= 0) && (paddingLength_ > 0)) {
-            outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
-                              length - paddingLength_);
-          } else {
-            outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
-                              length);
-          }
+          assert(leftToRead_ >= length);
+          const auto padding = leftToRead_ == length ? paddingLength_ : 0;
+          outputFile_.write(reinterpret_cast<const char *>(decryptedBuf),
+                            length - padding);
+
           leftToRead_ -= length;
           if (leftToRead_ > 0) {
             readFileContent();

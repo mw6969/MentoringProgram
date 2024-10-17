@@ -37,9 +37,7 @@ void Client::sendFile(const std::string &fileName) {
   inputFile.seekg(0, std::ios::beg);
 
   // Process padding
-  const bool hasPadding =
-      (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE)) !=
-      CryptoPP::AES::BLOCKSIZE;
+  const bool hasPadding = size % CryptoPP::AES::BLOCKSIZE != 0;
   const std::streamsize paddingLength =
       hasPadding
           ? (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE))
@@ -68,14 +66,8 @@ void Client::sendFile(const std::string &fileName) {
   char buf[Utils::BufferSize];
   while (inputFile.read(buf, sizeof(buf)) || inputFile.gcount() > 0) {
     std::streamsize length = inputFile.gcount();
-    // Add garbage to the last block of data if file size is not a multiple of
-    // 16
+    // Increase length if size of file is not a multiple of 16
     if ((length < Utils::BufferSize) && hasPadding) {
-      const std::string garbage(paddingLength, 'a');
-
-      memcpy(buf + sizeof(buf) - paddingLength, garbage.c_str(), paddingLength);
-
-      // strcpy(buf, garbage.data());
       length += paddingLength;
     }
     CryptoPP::byte encryptedBuf[sizeof(buf)];
