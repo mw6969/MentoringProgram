@@ -7,13 +7,14 @@ Server::Server(boost::asio::io_service &ioService, const unsigned short port)
 }
 
 void Server::accept() {
-  acceptor_.async_accept([this](boost::system::error_code ec,
-                                tcp::socket socket) {
-    if (!ec) {
-      std::make_shared<Session>(std::move(socket))->start();
-    } else {
-      throw std::runtime_error("Failed to accept connection: " + ec.message());
-    }
-    accept();
-  });
+  acceptor_.async_accept(
+      [this](boost::system::error_code ec, tcp::socket socket) {
+        if (!ec) {
+          std::make_shared<Session>(std::move(socket))->start();
+        } else {
+          throw std::runtime_error("Server has failed to accept connection: " +
+                                   ec.message());
+        }
+        accept();
+      });
 }
