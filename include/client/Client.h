@@ -11,8 +11,7 @@ using boost::asio::ip::tcp;
 
 class Client {
 public:
-  Client(boost::asio::io_service &ioService, const std::string &host,
-         const unsigned short port);
+  Client(boost::asio::io_service &ioService, const unsigned short port);
 
   void sendFiles(const std::vector<std::string> &files);
 

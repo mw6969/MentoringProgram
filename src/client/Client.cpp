@@ -4,10 +4,9 @@
 
 #include <fstream>
 
-Client::Client(boost::asio::io_service &ioService, const std::string &host,
-               const unsigned short port)
+Client::Client(boost::asio::io_service &ioService, const unsigned short port)
     : socket_(ioService), endpointIterator_(tcp::resolver(ioService).resolve(
-                              {host, std::to_string(port)})),
+                              {"localhost", std::to_string(port)})),
       cryptor_(std::make_unique<Cryptor>()) {
   connect();
 }
