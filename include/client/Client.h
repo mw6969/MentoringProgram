@@ -1,7 +1,7 @@
 #ifndef _CLIENT_
 #define _CLIENT_
 
-#include "Cryptor.h"
+#include "DataReader.h"
 
 #include <boost/asio.hpp>
 #include <string>
@@ -17,12 +17,11 @@ public:
 
 private:
   void connect();
-  void sendFile(const std::string &fileName);
 
 private:
   tcp::socket socket_;
   tcp::resolver::iterator endpointIterator_;
-  std::unique_ptr<Cryptor> cryptor_;
+  std::unique_ptr<DataReader> dataReader_;
 };
 
 #endif

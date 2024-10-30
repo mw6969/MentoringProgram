@@ -1,17 +1,27 @@
-#include "Session.h"
-#include "Cryptor.h"
 
-#include <cassert>
+#include "DataWriter.h"
 
-Session::Session(tcp::socket socket)
-    : socket_(std::move(socket)), cryptor_(std::make_unique<Cryptor>()) {}
+DataWriter::DataWriter(tcp::socket socket)
+    : dataDecryptor_(std::make_unique<DataDecryptor>()),
+      socket_(std::move(socket)) {}
 
-void Session::start() {
+void DataWriter::processData(const std::string &fileName) {
   paddingLength_ = 0;
   readPaddingLength();
+
+  notifyComplete();
+  waitNextData();
 }
 
-void Session::readPaddingLength() {
+void DataWriter::notifyComplete() {
+  std::cout << "File write complete." << std::endl;
+}
+
+void DataWriter::waitNextData() {
+  std::cout << "Waiting for new file..." << std::endl;
+}
+
+void DataWriter::readPaddingLength() {
   boost::asio::async_read(
       socket_, boost::asio::buffer(&paddingLength_, sizeof(paddingLength_)),
       [this, self = shared_from_this()](boost::system::error_code ec,
@@ -26,7 +36,7 @@ void Session::readPaddingLength() {
       });
 }
 
-void Session::readFileNameLength() {
+void DataWriter::readFileNameLength() {
   boost::asio::async_read(
       socket_, boost::asio::buffer(&nameLength_, sizeof(nameLength_)),
       [this, self = shared_from_this()](boost::system::error_code ec,
@@ -40,7 +50,7 @@ void Session::readFileNameLength() {
       });
 }
 
-void Session::readFileName() {
+void DataWriter::readFileName() {
   originFileName_.resize(nameLength_);
   boost::asio::async_read(
       socket_, boost::asio::buffer(originFileName_),
@@ -55,7 +65,7 @@ void Session::readFileName() {
       });
 }
 
-void Session::readFileSize() {
+void DataWriter::readFileSize() {
   boost::asio::async_read(
       socket_, boost::asio::buffer(&leftToRead_, sizeof(leftToRead_)),
       [this, self = shared_from_this()](boost::system::error_code ec,
@@ -75,7 +85,7 @@ void Session::readFileSize() {
       });
 }
 
-void Session::readFileContent() {
+void DataWriter::readFileContent() {
   boost::asio::async_read(
       socket_,
       boost::asio::buffer(
@@ -84,8 +94,7 @@ void Session::readFileContent() {
                                         std::size_t length) {
         if (!ec && outputFile_) {
           CryptoPP::byte decryptedBuf[sizeof(data_)];
-          cryptor_->getDecryptor()->ProcessData(
-              decryptedBuf, reinterpret_cast<CryptoPP::byte *>(data_), length);
+          dataDecryptor_->processData(data_, decryptedBuf, length);
 
           assert(leftToRead_ >= length);
           const auto padding = leftToRead_ == length ? paddingLength_ : 0;
@@ -106,7 +115,7 @@ void Session::readFileContent() {
       });
 }
 
-void Session::readFileHashSize() {
+void DataWriter::readFileHashSize() {
   boost::asio::async_read(
       socket_,
       boost::asio::buffer(&receivedHashSize_, sizeof(receivedHashSize_)),
@@ -121,7 +130,7 @@ void Session::readFileHashSize() {
       });
 }
 
-void Session::readFileHash() {
+void DataWriter::readFileHash() {
   receivedHash_.resize(receivedHashSize_);
   boost::asio::async_read(
       socket_, boost::asio::buffer(receivedHash_),
@@ -129,7 +138,7 @@ void Session::readFileHash() {
                                         std::size_t /*length*/) {
         if (!ec) {
           // Check file integrity
-          const auto hash = Cryptor::getSha256Hash(uniqueFileName_);
+          const auto hash = Utils::getSha256Hash(uniqueFileName_);
           if (receivedHash_ != hash) {
             throw std::runtime_error(
                 "Session has failed to transmission file:  " + uniqueFileName_);

@@ -42,15 +42,3 @@ CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption *Cryptor::getDecryptor() {
   }
   return decryptor_.get();
 }
-
-std::string Cryptor::getSha256Hash(const std::string &fileName) {
-  CryptoPP::SHA256 hash;
-  std::string digest;
-
-  CryptoPP::FileSource f(
-      fileName.c_str(), true,
-      new CryptoPP ::HashFilter(
-          hash, new CryptoPP ::HexEncoder(new CryptoPP ::StringSink(digest))));
-
-  return digest;
-}

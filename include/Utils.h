@@ -7,6 +7,7 @@
 class Utils {
 public:
   static std::string getUniqueFileName(const std::string &originName);
+  static std::string getSha256Hash(const std::string &fileName);
 
 public:
   static boost::asio::io_service IOService;
