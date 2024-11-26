@@ -37,3 +37,13 @@ std::string Utils::getSha256Hash(const std::string &fileName) {
 
   return digest;
 }
+
+bool Utils::HasPadding(const std::streamsize size) {
+  return size % CryptoPP::AES::BLOCKSIZE != 0;
+}
+
+std::streamsize Utils::PaddingLength(const std::streamsize size) {
+  return HasPadding(size)
+             ? (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE))
+             : 0;
+}

@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
       fileNames.push_back(argv[i]);
     }
-    client->sendFiles(std::move(fileNames));
+    client->SendFiles(std::move(fileNames));
     logger.log("Files sent");
   } catch (const std::exception &ex) {
     logger.log(ex.what());
