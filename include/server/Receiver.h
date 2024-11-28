@@ -1,30 +1,31 @@
 #ifndef _RECEIVER_
 #define _RECEIVER_
 
+#include "Decoder.h"
 #include "Processor.h"
 #include "Reader.h"
+#include "ServerDataStruct.h"
 
 #include <functional>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
-// Format of DataType is buffer/length/padding
-class Receiver
-    : public Processor<Receiver,
-                       std::tuple<std::vector<char>, std::size_t, uint32_t>>,
-      public std::enable_shared_from_this<Receiver> {
+class Decoder;
+class Receiver : public Processor<Receiver, ServerDataStruct>,
+                 public std::enable_shared_from_this<Receiver> {
 public:
   Receiver(tcp::socket socket);
+  void SetDecoder(const std::shared_ptr<Decoder> &decoder);
   std::string GetUniqueFileName() const;
   std::string GetReceivedHash() const;
   void Initialize();
   bool IsDone();
+  bool ReadyToProcessData();
   void ProcessDataImpl();
   void Finalize();
 
@@ -55,7 +56,6 @@ private:
   }
 
 private:
-  std::tuple<std::vector<char>, std::size_t, uint32_t> data_;
   uint32_t paddingLength_;
   uint32_t nameLength_;
   uint32_t receivedHashSize_;
@@ -64,6 +64,7 @@ private:
   std::string originFileName_;
   std::string uniqueFileName_;
   std::string receivedHash_;
+  std::shared_ptr<Decoder> decoder_;
 };
 
 #endif

@@ -20,23 +20,17 @@ void Reader::Initialize() {
 
 bool Reader::IsDone() { return file_.eof(); }
 
+bool Reader::ReadyToProcessData() { return encoder_->WaitNextData(); }
+
 void Reader::ProcessDataImpl() {
-  if (!encoder_->WaitNextData()) {
-    return;
-  }
-
-  std::tuple<std::vector<char>, std::size_t, uint32_t> data;
-  std::get<0>(data).resize(Utils::BufferSize);
-  std::get<2>(data) = size_;
-
-  file_.read(std::get<0>(data).data(), std::get<0>(data).size());
+  std::vector<char> buffer(Utils::BufferSize);
+  file_.read(buffer.data(), buffer.size());
   if (file_.gcount() > 0) {
-    std::streamsize length = file_.gcount();
+    auto length = file_.gcount();
     if ((length < Utils::BufferSize) && Utils::HasPadding(size_)) {
       length += Utils::PaddingLength(size_);
     }
-    std::get<1>(data) = length;
-    Push(std::move(data));
+    Push({std::move(buffer), length, size_});
   }
 }
 

@@ -15,20 +15,17 @@ void Encoder::Initialize() {}
 
 bool Encoder::IsDone() { return reader_->NotifyComplete() && reader_->Empty(); }
 
+bool Encoder::ReadyToProcessData() {
+  return sender_->WaitNextData() && !reader_->Empty();
+}
+
 void Encoder::ProcessDataImpl() {
-  if (!sender_->WaitNextData()) {
-    return;
-  }
-  auto data = reader_->Pop();
-  std::tuple<std::vector<char>, std::size_t, std::streamsize> encodedData;
-  std::get<0>(encodedData).resize(std::get<0>(data).size());
-  std::get<1>(encodedData) = std::get<1>(data);
-  std::get<2>(encodedData) = std::get<2>(data);
+  auto [srcBuffer, srcLength, srcSize] = reader_->Pop();
+  std::vector<char> encodedBuffer(srcBuffer.size());
   cryptor_->getEncryptor()->ProcessData(
-      reinterpret_cast<CryptoPP::byte *>(std::get<0>(encodedData).data()),
-      reinterpret_cast<CryptoPP::byte *>(std::get<0>(data).data()),
-      std::get<1>(data));
-  Push(std::move(encodedData));
+      reinterpret_cast<CryptoPP::byte *>(encodedBuffer.data()),
+      reinterpret_cast<CryptoPP::byte *>(srcBuffer.data()), srcLength);
+  Push({std::move(encodedBuffer), srcLength, srcSize});
 }
 
 void Encoder::Finalize() {}

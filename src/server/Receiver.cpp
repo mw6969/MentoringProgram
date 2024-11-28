@@ -4,6 +4,10 @@
 
 Receiver::Receiver(tcp::socket socket) : socket_(std::move(socket)) {}
 
+void Receiver::SetDecoder(const std::shared_ptr<Decoder> &decoder) {
+  decoder_ = decoder;
+}
+
 void Receiver::Initialize() {
   paddingLength_ = 0;
   ReadPaddingLength();
@@ -11,15 +15,15 @@ void Receiver::Initialize() {
 
 bool Receiver::IsDone() { return leftToRead_ <= 0; }
 
+bool Receiver::ReadyToProcessData() { return decoder_->WaitNextData(); }
+
 void Receiver::ProcessDataImpl() {
   std::vector<char> buffer(
       std::min<std::streamsize>(Utils::BufferSize, leftToRead_));
   ReadData(buffer, [this, &buffer](size_t length) {
-    std::get<0>(data_) = buffer;
-    std::get<1>(data_) = length;
-    std::get<2>(data_) = leftToRead_ == length ? paddingLength_ : 0;
+    const uint32_t paddingLength = leftToRead_ == length ? paddingLength_ : 0;
     leftToRead_ -= length;
-    Push(std::move(data_));
+    Push({std::move(buffer), length, paddingLength});
   });
 }
 

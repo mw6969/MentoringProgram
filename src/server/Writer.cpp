@@ -16,21 +16,20 @@ void Writer::Initialize() {
   if (!file_.is_open()) {
     throw std::runtime_error("Failed to open file: " + fileName);
   }
-  file_.write(reinterpret_cast<const char *>(std::get<0>(data).data()),
-              std::get<1>(data) - std::get<2>(data));
+  file_.write(reinterpret_cast<const char *>(data.buffer.data()),
+              data.length - data.padding);
 }
 
 bool Writer::IsDone() {
   return decoder_->NotifyComplete() && decoder_->Empty();
 }
 
+bool Writer::ReadyToProcessData() { return !decoder_->Empty(); }
+
 void Writer::ProcessDataImpl() {
-  if (decoder_->Empty()) {
-    return;
-  }
-  auto data = decoder_->Pop();
-  file_.write(reinterpret_cast<const char *>(std::get<0>(data).data()),
-              std::get<1>(data) - std::get<2>(data));
+  auto [srcBuffer, srcLength, srcPadding] = decoder_->Pop();
+  file_.write(reinterpret_cast<const char *>(srcBuffer.data()),
+              srcLength - srcPadding);
 }
 
 void Writer::Finalize() {

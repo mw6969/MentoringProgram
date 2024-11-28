@@ -4,23 +4,22 @@
 #include "Decoder.h"
 #include "Processor.h"
 #include "Receiver.h"
+#include "ServerDataStruct.h"
 
 #include <fstream>
 #include <memory>
-#include <tuple>
 
 class Decoder;
+class Receiver;
 
-// Format of DataType is buffer/length/padding
-class Writer
-    : public Processor<Writer,
-                       std::tuple<std::vector<char>, std::size_t, uint32_t>> {
+class Writer : public Processor<Writer, ServerDataStruct> {
 public:
   Writer() = default;
   void SetDecoder(const std::shared_ptr<Decoder> &decoder);
   void SetReceiver(const std::shared_ptr<Receiver> &receiver);
   void Initialize();
   bool IsDone();
+  bool ReadyToProcessData();
   void ProcessDataImpl();
   void Finalize();
 

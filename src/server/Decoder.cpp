@@ -17,20 +17,17 @@ bool Decoder::IsDone() {
   return receiver_->NotifyComplete() && receiver_->Empty();
 }
 
+bool Decoder::ReadyToProcessData() {
+  return writer_->WaitNextData() && !receiver_->Empty();
+}
+
 void Decoder::ProcessDataImpl() {
-  if (!writer_->WaitNextData() || receiver_->Empty()) {
-    return;
-  }
-  auto data = receiver_->Pop();
-  std::tuple<std::vector<char>, std::size_t, uint32_t> decodedData;
-  std::get<0>(decodedData).resize(std::get<0>(data).size());
-  std::get<1>(decodedData) = std::get<1>(data);
-  std::get<2>(decodedData) = std::get<2>(data);
+  auto [srcBuffer, srcLength, srcPadding] = receiver_->Pop();
+  std::vector<char> decodedBuffer(srcBuffer.size());
   cryptor_->getDecryptor()->ProcessData(
-      reinterpret_cast<CryptoPP::byte *>(std::get<0>(decodedData).data()),
-      reinterpret_cast<CryptoPP::byte *>(std::get<0>(data).data()),
-      std::get<1>(data));
-  Push(std::move(decodedData));
+      reinterpret_cast<CryptoPP::byte *>(decodedBuffer.data()),
+      reinterpret_cast<CryptoPP::byte *>(srcBuffer.data()), srcLength);
+  Push({std::move(decodedBuffer), srcLength, srcPadding});
 }
 
 void Decoder::Finalize() {}

@@ -19,6 +19,7 @@ void Server::accept() {
           auto decoder = std::make_shared<Decoder>();
           auto receiver = std::make_shared<Receiver>(std::move(socket));
 
+          receiver->SetDecoder(decoder);
           decoder->SetReceiver(receiver);
           decoder->SetWriter(writer);
           writer->SetDecoder(decoder);

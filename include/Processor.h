@@ -13,7 +13,10 @@ public:
   void ProcessData() {
     static_cast<Derived *>(this)->Initialize();
     while (!static_cast<Derived *>(this)->IsDone()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      if (!static_cast<Derived *>(this)->ReadyToProcessData()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        continue;
+      }
       static_cast<Derived *>(this)->ProcessDataImpl();
     }
     static_cast<Derived *>(this)->Finalize();
