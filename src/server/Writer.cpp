@@ -10,14 +10,14 @@ void Writer::SetReceiver(const std::shared_ptr<Receiver> &receiver) {
 }
 
 void Writer::Initialize() {
-  auto data = decoder_->Pop();
+  auto [srcBuffer, srcLength, srcPadding] = decoder_->Pop();
   const auto fileName = receiver_->GetUniqueFileName();
   file_.open(fileName, std::ios_base::binary);
   if (!file_.is_open()) {
     throw std::runtime_error("Failed to open file: " + fileName);
   }
-  file_.write(reinterpret_cast<const char *>(data.buffer.data()),
-              data.length - data.padding);
+  file_.write(reinterpret_cast<const char *>(srcBuffer.data()),
+              srcLength - srcPadding);
 }
 
 bool Writer::IsDone() {

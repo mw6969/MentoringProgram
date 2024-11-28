@@ -10,16 +10,16 @@ void Sender::SetEncoder(const std::shared_ptr<Encoder> &encoder) {
 }
 
 void Sender::Initialize() {
-  auto data = encoder_->Pop();
+  auto [srcBuffer, srcLength, srcSize] = encoder_->Pop();
 
   // Send padding length
   const uint32_t networkPaddingLength =
-      htonl(static_cast<uint32_t>(Utils::PaddingLength(data.size)));
+      htonl(static_cast<uint32_t>(Utils::PaddingLength(srcSize)));
 
   boost::asio::write(
       socket_,
       boost::asio::buffer(&networkPaddingLength, sizeof(networkPaddingLength)));
-  data.size += Utils::PaddingLength(data.size);
+  srcSize += Utils::PaddingLength(srcSize);
 
   // Send length of filename
   const uint32_t nameLength = filename_.length();
@@ -30,12 +30,10 @@ void Sender::Initialize() {
   boost::asio::write(socket_, boost::asio::buffer(filename_));
 
   // Send size of file
-  boost::asio::write(socket_,
-                     boost::asio::buffer(&data.size, sizeof(data.size)));
+  boost::asio::write(socket_, boost::asio::buffer(&srcSize, sizeof(srcSize)));
 
   // Send first buffer
-  boost::asio::write(socket_,
-                     boost::asio::buffer(data.buffer.data(), data.length));
+  boost::asio::write(socket_, boost::asio::buffer(srcBuffer.data(), srcLength));
 }
 
 bool Sender::IsDone() {
