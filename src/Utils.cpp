@@ -1,49 +1,74 @@
 #include "Utils.h"
 
-#include <filesystem>
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <random>
+#include <unordered_set>
 
-#include <crypto++/aes.h>
-#include <crypto++/modes.h>
-#include <crypto++/osrng.h>
-#include <cryptopp/files.h>
-#include <cryptopp/hex.h>
+void Utils::PrintMeasureTime(std::function<void(std::vector<double> &)> func,
+                             const int value, const std::string &method) {
+  std::vector<double> doubles = GenerateUniqueDoubles(value, 1.0, value);
+  auto start = std::chrono::high_resolution_clock::now();
+  func(doubles);
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  std::cout << method << " time: " << duration.count() << " microseconds"
+            << std::endl;
+}
 
-boost::asio::io_service Utils::IOService;
-const unsigned short Utils::BufferSize;
-const unsigned short Utils::Port;
+void Utils::Quicksort(std::vector<double> &arr, const int low, const int high) {
+  if (low < high) {
+    int pivot = Partition(arr, low, high);
+    Quicksort(arr, low, pivot - 1);
+    Quicksort(arr, pivot + 1, high);
+  }
+}
 
-std::string Utils::getUniqueFileName(const std::string &originName) {
-  std::string fileName;
-  int counter = 0;
-  while (true) {
-    fileName = "out" + std::to_string(counter) + "_" + originName;
-    if (std::filesystem::exists(fileName)) {
-      counter++;
+void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
+                                   int depth) {
+  if (low < high) {
+    int pivot = Partition(arr, low, high);
+
+    int maxDepth = std::thread::hardware_concurrency();
+    if (depth < maxDepth) {
+      auto handle =
+          std::async(std::launch::async, &Utils::MultiThreadedQuicksort,
+                     std::ref(arr), low, pivot - 1, depth + 1);
+      MultiThreadedQuicksort(arr, pivot + 1, high, depth + 1);
+      handle.get();
     } else {
-      break;
+      MultiThreadedQuicksort(arr, low, pivot - 1, depth);
+      MultiThreadedQuicksort(arr, pivot + 1, high, depth);
     }
   }
-  return fileName;
 }
 
-std::string Utils::getSha256Hash(const std::string &fileName) {
-  CryptoPP::SHA256 hash;
-  std::string digest;
+int Utils::Partition(std::vector<double> &arr, const int low, const int high) {
+  double pivot = arr[high];
+  int i = (low - 1);
 
-  CryptoPP::FileSource f(
-      fileName.c_str(), true,
-      new CryptoPP ::HashFilter(
-          hash, new CryptoPP::HexEncoder(new CryptoPP ::StringSink(digest))));
-
-  return digest;
+  for (int j = low; j <= high - 1; j++) {
+    if (arr[j] < pivot) {
+      i++;
+      std::swap(arr[i], arr[j]);
+    }
+  }
+  std::swap(arr[i + 1], arr[high]);
+  return (i + 1);
 }
 
-bool Utils::HasPadding(const std::streamsize size) {
-  return size % CryptoPP::AES::BLOCKSIZE != 0;
-}
+std::vector<double> Utils::GenerateUniqueDoubles(const size_t numElements,
+                                                 const double min,
+                                                 const double max) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<double> dis(min, max);
 
-std::streamsize Utils::PaddingLength(const std::streamsize size) {
-  return HasPadding(size)
-             ? (CryptoPP::AES::BLOCKSIZE - (size % CryptoPP::AES::BLOCKSIZE))
-             : 0;
+  std::unordered_set<double> uniqueNumbers;
+  while (uniqueNumbers.size() < numElements) {
+    uniqueNumbers.insert(dis(gen));
+  }
+  return std::vector<double>(uniqueNumbers.begin(), uniqueNumbers.end());
 }
