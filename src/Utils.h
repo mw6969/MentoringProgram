@@ -14,12 +14,14 @@ public:
                                      const int high, int depth = 0);
 
   static void PrintMeasureTime(std::function<void(std::vector<double> &)> func,
-                               const int value, const std::string &method);
+                               const int value, const std::string &method,
+                               int iterations = 100);
 
 private:
   static int Partition(std::vector<double> &arr, const int low, const int high);
   static std::vector<double> GenerateUniqueDoubles(size_t numElements,
                                                    double min, double max);
+  static int GetCoresCount(const std::string &cmd);
 };
 
 #endif
