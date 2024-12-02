@@ -1,13 +1,59 @@
 #include "Utils.h"
 
-#include <array>
 #include <chrono>
 #include <future>
 #include <iostream>
-#include <memory>
 #include <random>
-#include <stdexcept>
 #include <unordered_set>
+
+void Utils::Quicksort(std::vector<double> &arr, const int low, const int high) {
+  int i = low;
+  int j = high;
+  Partition(arr, GetPivot(arr, low, high), i, j);
+  if (low < j) {
+    Quicksort(arr, low, j);
+  }
+  if (i < high) {
+    Quicksort(arr, i, high);
+  }
+}
+
+void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
+                                   int depth, int syncSize) {
+  int i = low;
+  int j = high;
+  Partition(arr, GetPivot(arr, low, high), i, j);
+  // const int maxDepth = std::thread::hardware_concurrency();
+
+  std::future<void> lowFuture;
+  std::future<void> highFuture;
+
+  if (low < j) {
+    if (j - low < syncSize /*|| depth >= maxDepth*/) {
+      MultiThreadedQuicksort(arr, low, j, depth + 1);
+    } else {
+      lowFuture = std::async(std::launch::async, [&arr, low, j, depth]() {
+        MultiThreadedQuicksort(arr, low, j, depth + 1);
+      });
+    }
+  }
+  if (i < high) {
+    if (high - i < syncSize /*|| depth >= maxDepth*/) {
+      MultiThreadedQuicksort(arr, i, high, depth + 1);
+    } else {
+      highFuture = std::async(std::launch::async, [&arr, i, high, depth]() {
+        MultiThreadedQuicksort(arr, i, high, depth + 1);
+      });
+    }
+  }
+
+  if (lowFuture.valid()) {
+    lowFuture.wait();
+  }
+  if (highFuture.valid()) {
+    highFuture.wait();
+  }
+}
 
 void Utils::PrintMeasureTime(std::function<void(std::vector<double> &)> func,
                              const int value, const std::string &method,
@@ -27,43 +73,40 @@ void Utils::PrintMeasureTime(std::function<void(std::vector<double> &)> func,
             << std::endl;
 }
 
-void Utils::Quicksort(std::vector<double> &arr, const int low, const int high) {
-  if (low < high) {
-    int pivot = Partition(arr, low, high);
-    Quicksort(arr, low, pivot - 1);
-    Quicksort(arr, pivot + 1, high);
-  }
-}
-
-void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
-                                   int depth) {
-  if (low < high) {
-    int pivot = Partition(arr, low, high);
-    int maxDepth = GetCoresCount("lscpu | grep 'Core(s)' | awk '{print $4}'");
-    if (depth < maxDepth) {
-      auto handle =
-          std::async(std::launch::async, &Utils::MultiThreadedQuicksort,
-                     std::ref(arr), low, pivot - 1, depth + 1);
-      MultiThreadedQuicksort(arr, pivot + 1, high, depth + 1);
-      handle.get();
+double Utils::GetPivot(std::vector<double> &arr, int low, int high) {
+  if (arr[low] < arr[(low + high) / 2]) {
+    if (arr[(low + high) / 2] < arr[high]) {
+      return arr[(low + high) / 2];
+    } else if (arr[low] < arr[high]) {
+      return arr[high];
     } else {
-      MultiThreadedQuicksort(arr, low, pivot - 1, depth);
-      MultiThreadedQuicksort(arr, pivot + 1, high, depth);
+      return arr[low];
+    }
+  } else {
+    if (arr[low] < arr[high]) {
+      return arr[low];
+    } else if (arr[(low + high) / 2] < arr[high]) {
+      return arr[high];
+    } else {
+      return arr[(low + high) / 2];
     }
   }
 }
 
-int Utils::Partition(std::vector<double> &arr, const int low, const int high) {
-  double pivot = arr[high];
-  int i = (low - 1);
-  for (int j = low; j <= high - 1; j++) {
-    if (arr[j] < pivot) {
+void Utils::Partition(std::vector<double> &arr, double pivot, int &i, int &j) {
+  while (i <= j) {
+    while (arr[i] < pivot) {
       i++;
+    }
+    while (arr[j] > pivot) {
+      j--;
+    }
+    if (i <= j) {
       std::swap(arr[i], arr[j]);
+      i++;
+      j--;
     }
   }
-  std::swap(arr[i + 1], arr[high]);
-  return (i + 1);
 }
 
 std::vector<double> Utils::GenerateUniqueDoubles(const size_t numElements,
@@ -77,19 +120,4 @@ std::vector<double> Utils::GenerateUniqueDoubles(const size_t numElements,
     uniqueNumbers.insert(dis(gen));
   }
   return std::vector<double>(uniqueNumbers.begin(), uniqueNumbers.end());
-}
-
-int Utils::GetCoresCount(const std::string &cmd) {
-  std::array<char, 128> buffer;
-  std::string result;
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"),
-                                                pclose);
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-    result += buffer.data();
-  }
-  result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
-  return std::atoi(result.c_str());
 }
