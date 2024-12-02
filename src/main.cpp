@@ -2,6 +2,8 @@
 #include "Utils.h"
 
 #include <array>
+#include <semaphore>
+#include <thread>
 
 int main() {
   const std::array values{2, 10, 1000, 1000000};
@@ -18,7 +20,10 @@ int main() {
 
     Utils::PrintMeasureTime(
         [&](std::vector<double> &vec) {
-          Utils::MultiThreadedQuicksort(vec, 0, vec.size() - 1);
+          std::counting_semaphore<64> semaphore(
+              std::thread::hardware_concurrency());
+          Utils::MultiThreadedQuicksort(vec, 0, vec.size() - 1, semaphore,
+                                        10000);
         },
         value, "Multithreaded quicksort");
   }

@@ -19,39 +19,45 @@ void Utils::Quicksort(std::vector<double> &arr, const int low, const int high) {
 }
 
 void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
-                                   int depth, int syncSize) {
-  int i = low;
-  int j = high;
-  Partition(arr, GetPivot(arr, low, high), i, j);
-  // const int maxDepth = std::thread::hardware_concurrency();
+                                   std::counting_semaphore<64> &semaphore,
+                                   int syncSize) {
+  if (low < high) {
+    int i = low, j = high;
+    Partition(arr, GetPivot(arr, low, high), i, j);
 
-  std::future<void> lowFuture;
-  std::future<void> highFuture;
+    std::future<void> lowFuture;
+    std::future<void> highFuture;
 
-  if (low < j) {
-    if (j - low < syncSize /*|| depth >= maxDepth*/) {
-      MultiThreadedQuicksort(arr, low, j, depth + 1);
-    } else {
-      lowFuture = std::async(std::launch::async, [&arr, low, j, depth]() {
-        MultiThreadedQuicksort(arr, low, j, depth + 1);
-      });
+    if (low < j) {
+      if (j - low < syncSize) {
+        MultiThreadedQuicksort(arr, low, j, semaphore, syncSize);
+      } else {
+        semaphore.acquire();
+        lowFuture = std::async(
+            std::launch::async, [&arr, low, j, &semaphore, syncSize]() {
+              MultiThreadedQuicksort(arr, low, j, semaphore, syncSize);
+            });
+        semaphore.release();
+      }
     }
-  }
-  if (i < high) {
-    if (high - i < syncSize /*|| depth >= maxDepth*/) {
-      MultiThreadedQuicksort(arr, i, high, depth + 1);
-    } else {
-      highFuture = std::async(std::launch::async, [&arr, i, high, depth]() {
-        MultiThreadedQuicksort(arr, i, high, depth + 1);
-      });
+    if (i < high) {
+      if (high - i < syncSize) {
+        MultiThreadedQuicksort(arr, i, high, semaphore, syncSize);
+      } else {
+        semaphore.acquire();
+        highFuture = std::async(
+            std::launch::async, [&arr, i, high, &semaphore, syncSize]() {
+              MultiThreadedQuicksort(arr, i, high, semaphore, syncSize);
+            });
+        semaphore.release();
+      }
     }
-  }
-
-  if (lowFuture.valid()) {
-    lowFuture.wait();
-  }
-  if (highFuture.valid()) {
-    highFuture.wait();
+    if (lowFuture.valid()) {
+      lowFuture.wait();
+    }
+    if (highFuture.valid()) {
+      highFuture.wait();
+    }
   }
 }
 

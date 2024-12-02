@@ -2,6 +2,7 @@
 #define _UTILS_
 
 #include <functional>
+#include <semaphore>
 #include <string>
 #include <vector>
 
@@ -11,8 +12,9 @@ public:
                         const int high);
 
   static void MultiThreadedQuicksort(std::vector<double> &arr, const int low,
-                                     const int high, int depth = 0,
-                                     int syncSize = 10000);
+                                     const int high,
+                                     std::counting_semaphore<64> &semaphore,
+                                     int syncSize);
 
   static void PrintMeasureTime(std::function<void(std::vector<double> &)> func,
                                const int value, const std::string &method,
