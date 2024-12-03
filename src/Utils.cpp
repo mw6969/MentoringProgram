@@ -29,27 +29,25 @@ void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
   std::future<void> highFuture;
 
   if (low < j) {
-    if (j - low < syncSize) {
-      MultiThreadedQuicksort(arr, low, j, semaphore, syncSize);
-    } else {
-      semaphore.acquire();
+    if (j - low >= syncSize && semaphore.try_acquire()) {
       lowFuture = std::async(
           std::launch::async, [&arr, low, j, &semaphore, syncSize]() {
             MultiThreadedQuicksort(arr, low, j, semaphore, syncSize);
           });
       semaphore.release();
+    } else {
+      MultiThreadedQuicksort(arr, low, j, semaphore, syncSize);
     }
   }
   if (i < high) {
-    if (high - i < syncSize) {
-      MultiThreadedQuicksort(arr, i, high, semaphore, syncSize);
-    } else {
-      semaphore.acquire();
+    if (high - i >= syncSize && semaphore.try_acquire()) {
       highFuture = std::async(
           std::launch::async, [&arr, i, high, &semaphore, syncSize]() {
             MultiThreadedQuicksort(arr, i, high, semaphore, syncSize);
           });
       semaphore.release();
+    } else {
+      MultiThreadedQuicksort(arr, i, high, semaphore, syncSize);
     }
   }
   if (lowFuture.valid()) {
@@ -60,22 +58,20 @@ void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
   }
 }
 
-void Utils::PrintMeasureTime(std::function<void(std::vector<double> &)> func,
-                             const int value, const std::string &method,
-                             int iterations) {
+void Utils::PrintMeasureTime(std::function<void()> func, const int value,
+                             const std::string &method, int iterations) {
   std::uint64_t totalDuration = 0;
   for (int i = 0; i < iterations; i++) {
-    auto doubles = GenerateUniqueDoubles(value, 1.0, value);
     auto start = std::chrono::high_resolution_clock::now();
-    func(doubles);
+    func();
     auto stop = std::chrono::high_resolution_clock::now();
     totalDuration +=
         std::chrono::duration_cast<std::chrono::microseconds>(stop - start)
             .count();
   }
   const std::uint64_t averageDuration = totalDuration / iterations;
-  std::cout << method << " time: " << averageDuration << " microseconds"
-            << std::endl;
+  std::cout << method << " time for " << value << " items: " << averageDuration
+            << " microseconds" << std::endl;
 }
 
 double Utils::GetPivot(std::vector<double> &arr, int low, int high) {

@@ -8,24 +8,45 @@
 int main() {
   const std::array values{2, 10, 1000, 1000000};
   for (const auto value : values) {
+    auto quicksortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
     Utils::PrintMeasureTime(
-        [&](std::vector<double> &vec) {
-          Utils::Quicksort(vec, 0, vec.size() - 1);
+        [&quicksortVec]() {
+          Utils::Quicksort(quicksortVec, 0, quicksortVec.size() - 1);
         },
-        value, "Quicksort");
-
+        value, "Unsorted Quicksort");
     Utils::PrintMeasureTime(
-        [](std::vector<double> &vec) { std::sort(vec.begin(), vec.end()); },
-        value, "std::sort");
+        [&quicksortVec]() {
+          Utils::Quicksort(quicksortVec, 0, quicksortVec.size() - 1);
+        },
+        value, "Sorted Quicksort");
 
+    auto stdSortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
     Utils::PrintMeasureTime(
-        [&](std::vector<double> &vec) {
+        [&stdSortVec]() { std::sort(stdSortVec.begin(), stdSortVec.end()); },
+        value, "Unsorted std::sort");
+    Utils::PrintMeasureTime(
+        [&stdSortVec]() { std::sort(stdSortVec.begin(), stdSortVec.end()); },
+        value, "Sorted std::sort");
+
+    auto multiQuicksortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
+    Utils::PrintMeasureTime(
+        [&multiQuicksortVec]() {
           std::counting_semaphore<64> semaphore(
               std::thread::hardware_concurrency());
-          Utils::MultiThreadedQuicksort(vec, 0, vec.size() - 1, semaphore,
+          Utils::MultiThreadedQuicksort(multiQuicksortVec, 0,
+                                        multiQuicksortVec.size() - 1, semaphore,
                                         10000);
         },
-        value, "Multithreaded quicksort");
+        value, "Unsorted Multithreaded quicksort");
+    Utils::PrintMeasureTime(
+        [&multiQuicksortVec]() {
+          std::counting_semaphore<64> semaphore(
+              std::thread::hardware_concurrency());
+          Utils::MultiThreadedQuicksort(multiQuicksortVec, 0,
+                                        multiQuicksortVec.size() - 1, semaphore,
+                                        10000);
+        },
+        value, "Sorted Multithreaded quicksort");
   }
 
   return 0;

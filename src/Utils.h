@@ -16,15 +16,15 @@ public:
                                      std::counting_semaphore<64> &semaphore,
                                      int syncSize);
 
-  static void PrintMeasureTime(std::function<void(std::vector<double> &)> func,
-                               const int value, const std::string &method,
-                               int iterations = 100);
+  static void PrintMeasureTime(std::function<void()> func, const int value,
+                               const std::string &method, int iterations = 100);
+
+  static std::vector<double> GenerateUniqueDoubles(size_t numElements,
+                                                   double min, double max);
 
 private:
   static double GetPivot(std::vector<double> &arr, int low, int high);
   static void Partition(std::vector<double> &arr, double pivot, int &i, int &j);
-  static std::vector<double> GenerateUniqueDoubles(size_t numElements,
-                                                   double min, double max);
 };
 
 #endif
