@@ -58,20 +58,28 @@ void Utils::MultiThreadedQuicksort(std::vector<double> &arr, int low, int high,
   }
 }
 
-void Utils::PrintMeasureTime(std::function<void()> func, const int value,
-                             const std::string &method, int iterations) {
-  std::uint64_t totalDuration = 0;
+void Utils::PrintMeasureTime(std::function<void(std::vector<double> &)> func,
+                             const int value, const std::string &method,
+                             int iterations) {
+  std::uint64_t totalUnsortedDuration = 0;
+  std::uint64_t totalSortedDuration = 0;
   for (int i = 0; i < iterations; i++) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto stop = std::chrono::high_resolution_clock::now();
-    totalDuration +=
-        std::chrono::duration_cast<std::chrono::microseconds>(stop - start)
-            .count();
+    auto doubles = GenerateUniqueDoubles(value, 1.0, value);
+    for (int i = 0; i < 2; i++) {
+      auto start = std::chrono::high_resolution_clock::now();
+      func(doubles);
+      auto stop = std::chrono::high_resolution_clock::now();
+      (i == 0 ? totalUnsortedDuration : totalSortedDuration) +=
+          std::chrono::duration_cast<std::chrono::microseconds>(stop - start)
+              .count();
+    }
   }
-  const std::uint64_t averageDuration = totalDuration / iterations;
-  std::cout << method << " time for " << value << " items: " << averageDuration
+  std::cout << "Unsorted " << method << " time for " << value
+            << " items: " << totalUnsortedDuration / iterations
             << " microseconds" << std::endl;
+  std::cout << "Sorted " << method << " time for " << value
+            << " items: " << totalSortedDuration / iterations << " microseconds"
+            << std::endl;
 }
 
 double Utils::GetPivot(std::vector<double> &arr, int low, int high) {

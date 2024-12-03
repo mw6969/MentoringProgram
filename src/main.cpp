@@ -2,51 +2,42 @@
 #include "Utils.h"
 
 #include <array>
+#include <cstdlib>
 #include <semaphore>
 #include <thread>
 
 int main() {
   const std::array values{2, 10, 1000, 1000000};
   for (const auto value : values) {
-    auto quicksortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
     Utils::PrintMeasureTime(
-        [&quicksortVec]() {
-          Utils::Quicksort(quicksortVec, 0, quicksortVec.size() - 1);
+        [&](std::vector<double> &vec) {
+          Utils::Quicksort(vec, 0, vec.size() - 1);
         },
-        value, "Unsorted Quicksort");
+        value, "Quicksort");
+
     Utils::PrintMeasureTime(
-        [&quicksortVec]() {
-          Utils::Quicksort(quicksortVec, 0, quicksortVec.size() - 1);
+        [&](std::vector<double> &vec) {
+          std::qsort(vec.data(), vec.size(), sizeof(double),
+                     [](const void *a, const void *b) {
+                       double arg1 = *static_cast<const double *>(a);
+                       double arg2 = *static_cast<const double *>(b);
+                       if (arg1 < arg2)
+                         return -1;
+                       if (arg1 > arg2)
+                         return 1;
+                       return 0;
+                     });
         },
-        value, "Sorted Quicksort");
+        value, "std::qsort");
 
-    auto stdSortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
     Utils::PrintMeasureTime(
-        [&stdSortVec]() { std::sort(stdSortVec.begin(), stdSortVec.end()); },
-        value, "Unsorted std::sort");
-    Utils::PrintMeasureTime(
-        [&stdSortVec]() { std::sort(stdSortVec.begin(), stdSortVec.end()); },
-        value, "Sorted std::sort");
-
-    auto multiQuicksortVec = Utils::GenerateUniqueDoubles(value, 1.0, value);
-    Utils::PrintMeasureTime(
-        [&multiQuicksortVec]() {
+        [&](std::vector<double> &vec) {
           std::counting_semaphore<64> semaphore(
               std::thread::hardware_concurrency());
-          Utils::MultiThreadedQuicksort(multiQuicksortVec, 0,
-                                        multiQuicksortVec.size() - 1, semaphore,
+          Utils::MultiThreadedQuicksort(vec, 0, vec.size() - 1, semaphore,
                                         10000);
         },
-        value, "Unsorted Multithreaded quicksort");
-    Utils::PrintMeasureTime(
-        [&multiQuicksortVec]() {
-          std::counting_semaphore<64> semaphore(
-              std::thread::hardware_concurrency());
-          Utils::MultiThreadedQuicksort(multiQuicksortVec, 0,
-                                        multiQuicksortVec.size() - 1, semaphore,
-                                        10000);
-        },
-        value, "Sorted Multithreaded quicksort");
+        value, "Multithreaded quicksort");
   }
 
   return 0;
